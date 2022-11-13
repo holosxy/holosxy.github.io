@@ -148,6 +148,392 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/11/13/Linux%E6%93%8D%E4%BD%9C%E6%8C%87%E4%BB%A4%E4%B8%89/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="zhawp">
+      <meta itemprop="description" content="SHARINGBLOG">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="holosxy.github.io">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2022/11/13/Linux%E6%93%8D%E4%BD%9C%E6%8C%87%E4%BB%A4%E4%B8%89/" class="post-title-link" itemprop="url">Linux操作指令三</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2022-11-13 14:07:07 / 修改时间：14:25:27" itemprop="dateCreated datePublished" datetime="2022-11-13T14:07:07+08:00">2022-11-13</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p><strong>Part3主要是是生产上常用的常用的一些指令</strong></p>
+<p><strong>1.系统常用检查命令</strong></p>
+<p>磁盘 df -h<br>内存 free -m<br>负载 top</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">[root@redhat001 ~]$ free -m </span><br><span class="line">              total        used        free      shared  buff/cache   available</span><br><span class="line">Mem:           7823         222        6229         257        1371        7096</span><br><span class="line">Swap:             0           0           0</span><br></pre></td></tr></table></figure>
+
+<p>大数据 生产服务器 swap是设置0  10也可以</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">[root@redhat001 ~]$ df -h</span><br><span class="line">Filesystem      Size  Used Avail Use% Mounted on</span><br><span class="line">/dev/vda1        40G   16G   25G  39% /</span><br><span class="line"></span><br><span class="line">/dev/vdb1        2T   16G   25G  1% /data01</span><br><span class="line">/dev/vdb2        2T   16G   25G  1% /data02</span><br><span class="line">/dev/vdb3        2T   16G   25G  1% /data03</span><br><span class="line">/dev/vdb4        2T   16G   25G  1% /data04</span><br><span class="line"></span><br><span class="line">500G ssd</span><br><span class="line"></span><br><span class="line">不要</span><br><span class="line">devtmpfs        3.9G     0  3.9G   0% /dev</span><br><span class="line">tmpfs           3.9G   16K  3.9G   1% /dev/shm</span><br><span class="line">tmpfs           3.9G  258M  3.6G   7% /run</span><br><span class="line">tmpfs           3.9G     0  3.9G   0% /sys/fs/cgroup</span><br><span class="line">tmpfs           783M     0  783M   0% /run/user/1004</span><br><span class="line">[root@redhat001 ~]$ </span><br></pre></td></tr></table></figure>
+
+<p>系统负载<br>load average: 0.01, 0.03, 0.05<br>          1min   5min  15min</p>
+<p>经验值: 10  生产不用超过这个 ，否则认为服务器就是卡<br>a.是你的程序有问题 在大量跑计算<br>b.是不是被挖矿 yarn redis 最容易被hacker 攻击<br>c.硬件问题  内存条 硬盘   重启 </p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">top - 21:20:22 up 7 days, 58 min,  1 user,  load average: 0.01, 0.03, 0.05</span><br><span class="line">Tasks:  89 total,   1 running,  88 sleeping,   0 stopped,   0 zombie</span><br><span class="line">%Cpu(s):  0.2 us,  0.5 sy,  0.0 ni, 99.0 id,  0.0 wa,  0.0 hi,  0.0 si,  0.3 st</span><br><span class="line">KiB Mem :  8011076 total,  6377388 free,   229060 used,  1404628 buff/cache</span><br><span class="line">KiB Swap:        0 total,        0 free,        0 used.  7265724 avail Mem </span><br><span class="line"></span><br><span class="line">  PID USER      PR  NI    VIRT    RES    SHR S  %CPU %MEM     TIME+ COMMAND                                  </span><br><span class="line"> 2374 root      20   0  394348  31376   8608 S   0.3  0.4  41:44.99 jdog-kunlunmirr                          </span><br><span class="line">    1 root      20   0  125356   3796   2508 S   0.0  0.0   1:22.32 systemd                                  </span><br><span class="line">    2 root      20   0       0      0      0 S   0.0  0.0   0:00.00 kthreadd                                 </span><br><span class="line">    3 root      20   0       0      0      0 S   0.0  0.0   0:00.08 ksoftirqd/0                              </span><br><span class="line">    5 root       0 -20       0      0      0 S   0.0  0.0   0:00.00 kworker/0:0H                             </span><br><span class="line">    6 root      20   0       0      0      0 S   0.0  0.0   0:02.50 kworker/u4:0</span><br></pre></td></tr></table></figure>
+<p><strong>2.yum安装</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">yum search httpd</span><br><span class="line">yum install httpd</span><br></pre></td></tr></table></figure>
+<p>centos6:<br>service httpd status|start|stop  1个应用httpd<br>centos7:<br>service httpd status|start|stop  兼容<br>systemctl status|start|stop httpd app2 app3 app4  一次性操作多个应用</p>
+<p>搜索 卸载:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">[root@redhat001 ~]# rpm -qa|grep http</span><br><span class="line">httpd-2.4.6-90.el7.centos.x86_64</span><br><span class="line">httpd-tools-2.4.6-90.el7.centos.x86_64</span><br><span class="line">[root@redhat001 ~]# rpm -e 包名称 --nodeps</span><br><span class="line">[root@redhat001 ~]# yum remove httpd-2.4.6-90.el7.centos.x86_64</span><br></pre></td></tr></table></figure>
+
+<p><strong>3.进程 端口号</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">ps -ef | grep http</span><br><span class="line">kill -9 16629</span><br><span class="line">kill -9 16630 16631  16632  16633  16634</span><br></pre></td></tr></table></figure>
+
+<p>根据匹配字段 搜索所有符合的进程 全部杀死<br>但是: 生产慎用 除非你先ps查看 这个关键词搜索的进程 是不是都是你想要杀死的进程<br>保不齐有个其他服务的进程 会造成误杀 生产事故！！！</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">[root@redhat001 ~]# ps -ef|grep http</span><br><span class="line">root     18363     1  0 21:51 ?        00:00:00 /usr/sbin/httpd -DFOREGROUND</span><br><span class="line">apache   18364 18363  0 21:51 ?        00:00:00 /usr/sbin/httpd -DFOREGROUND</span><br><span class="line">apache   18365 18363  0 21:51 ?        00:00:00 /usr/sbin/httpd -DFOREGROUND</span><br><span class="line">apache   18366 18363  0 21:51 ?        00:00:00 /usr/sbin/httpd -DFOREGROUND</span><br><span class="line">apache   18367 18363  0 21:51 ?        00:00:00 /usr/sbin/httpd -DFOREGROUND</span><br><span class="line">apache   18368 18363  0 21:51 ?        00:00:00 /usr/sbin/httpd -DFOREGROUND</span><br><span class="line">root     18387 15881  0 21:51 pts/2    00:00:00 grep --color=auto http</span><br><span class="line">[root@redhat001 ~]# kill -9 $(pgrep -f httpd)</span><br><span class="line">[root@redhat001 ~]# </span><br><span class="line">[root@redhat001 ~]# </span><br><span class="line">[root@redhat001 ~]# ps -ef|grep http</span><br><span class="line">root     18444 15881  0 21:52 pts/2    00:00:00 grep --color=auto http</span><br><span class="line">[root@redhat001 ~]# </span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">[root@redhat001 ~]# ps -ef|grep http</span><br><span class="line">root     18670     1  0 21:53 ?        00:00:00 /usr/sbin/httpd -DFOREGROUND</span><br><span class="line">apache   18671 18670  0 21:53 ?        00:00:00 /usr/sbin/httpd -DFOREGROUND</span><br><span class="line">apache   18672 18670  0 21:53 ?        00:00:00 /usr/sbin/httpd -DFOREGROUND</span><br><span class="line">apache   18673 18670  0 21:53 ?        00:00:00 /usr/sbin/httpd -DFOREGROUND</span><br><span class="line">apache   18674 18670  0 21:53 ?        00:00:00 /usr/sbin/httpd -DFOREGROUND</span><br><span class="line">apache   18675 18670  0 21:53 ?        00:00:00 /usr/sbin/httpd -DFOREGROUND</span><br><span class="line">root     18696 15881  0 21:54 pts/2    00:00:00 grep --color=auto http</span><br></pre></td></tr></table></figure>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">[root@redhat001 ~]# yum install -y net-tools.x86_64</span><br><span class="line">[root@redhat001 ~]# netstat -nlp| grep 18670</span><br><span class="line">tcp6       0      0 :::80                   :::*                    LISTEN      18670/httpd         </span><br><span class="line">[root@redhat001 ~]# </span><br><span class="line">[root@redhat001 ~]# </span><br><span class="line">[root@redhat001 ~]# </span><br><span class="line">[root@redhat001 ~]# netstat -nlp| grep 18671</span><br><span class="line">[root@redhat001 ~]# netstat -nlp| grep 18672</span><br><span class="line">[root@redhat001 ~]# netstat -nlp| grep 18673</span><br><span class="line">[root@redhat001 ~]# </span><br></pre></td></tr></table></figure>
+
+<p>进程不一定都会起到端口号<br>但是  与其他服务通信 比如需要端口号！！！</p>
+<p>eg:去打开xxx服务器的应用yyy的网页？你会涉及到哪些Linux命令<br>ip<br>ps -ef|grep yyy –》pid<br>netstat -nlp|grep pid –》port</p>
+<p>浏览器: <a href="http://ip:port">http://ip:port</a></p>
+<p>细节:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">[root@redhat001 ~]# netstat -nlp| grep 18670</span><br><span class="line">tcp6       0      0 :::80                   :::*                    LISTEN      18670/httpd         </span><br><span class="line">tcp6       0      0 0.0.0.0:80                   :::*                    LISTEN      18670/httpd         </span><br><span class="line">tcp6       0      0 192.168.0.3:80                   :::*                    LISTEN      18670/httpd         </span><br><span class="line"></span><br><span class="line"></span><br><span class="line">tcp6       0      0 127.0.0.1:80                   :::*                    LISTEN      18670/httpd         </span><br><span class="line">tcp6       0      0 localhost:80                   :::*                    LISTEN      18670/httpd         </span><br><span class="line">危险: 该服务只能自己服务器的里面自己访问自己  </span><br></pre></td></tr></table></figure>
+
+<p>ping   ip<br>telnet ip port</p>
+<p>window cmd：<br>ping 114.67.101.143<br>telnet 114.67.101.143 80</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">Linux：</span><br><span class="line">[root@redhat001 ~]# telnet redhat001 80</span><br><span class="line">Trying 192.168.0.3...</span><br><span class="line">Connected to redhat001.</span><br><span class="line">Escape character is &#x27;^]&#x27;.</span><br><span class="line">^Z</span><br><span class="line">Connection closed by foreign host.</span><br><span class="line">[root@redhat001 ~]# </span><br><span class="line">[root@redhat001 ~]# </span><br><span class="line">[root@redhat001 ~]# </span><br><span class="line">[root@redhat001 ~]# </span><br><span class="line">[root@redhat001 ~]# telnet redhat001 809</span><br><span class="line">Trying 192.168.0.3...</span><br><span class="line">telnet: connect to address 192.168.0.3: Connection refused</span><br><span class="line">[root@redhat001 ~]# </span><br></pre></td></tr></table></figure>
+
+<p>有可能你的服务器 防火墙 开启，云主机 需要开启 安全组策略<br>直接找Linux运维 网络工程师 加防火墙(硬件)策略  </p>
+<p>总结:<br>Connection refused<br>1.ping   ip 因为服务器是ping功能禁止<br>2.telnet ip  port  ok</p>
+<p>配置企业级别yum源 取代互联网的repo文件的URL</p>
+<p>物理隔绝</p>
+<p><strong>4.下载</strong></p>
+<p>wget <a target="_blank" rel="noopener" href="https://repo1.maven.org/maven2/org/apache/spark/spark-core_2.12/2.4.5/spark-core_2.12-2.4.5.jar">https://repo1.maven.org/maven2/org/apache/spark/spark-core_2.12/2.4.5/spark-core_2.12-2.4.5.jar</a><br>curl <a target="_blank" rel="noopener" href="https://repo1.maven.org/maven2/org/apache/spark/spark-core_2.12/2.4.5/spark-core_2.12-2.4.5.jar">https://repo1.maven.org/maven2/org/apache/spark/spark-core_2.12/2.4.5/spark-core_2.12-2.4.5.jar</a> -O  spark-core_2.12-2.4.5.jar</p>
+<p><strong>5.压缩 解压</strong></p>
+<p>zip -r xxx.zip xxx/*<br>unzip xxx.zip</p>
+<p>tar -czvf xxxx.tar.gz  xxxx/*<br>tar -xzvf xxxx.tar.gz</p>
+<p>Examples:<br>  tar -cf archive.tar foo bar  # Create archive.tar from files foo and bar.<br>  tar -tvf archive.tar         # List all files in archive.tar verbosely.<br>  tar -xf archive.tar          # Extract all files from archive.tar.</p>
+<p><strong>6.命令找不到</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">[root@redhat001 ~]# </span><br><span class="line">[root@redhat001 ~]# </span><br><span class="line">[root@redhat001 ~]# ls</span><br><span class="line">dir1  dir1.tar.gz</span><br><span class="line">[root@redhat001 ~]# which ls</span><br><span class="line">alias ls=&#x27;ls --color=auto&#x27;</span><br><span class="line">        /usr/bin/ls</span><br><span class="line">[root@redhat001 ~]# which jjj</span><br><span class="line">/usr/bin/which: no jjj in (/home/dwz/app/python3/bin:/usr/java/jdk1.8.0_181/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin)</span><br><span class="line">[root@redhat001 ~]# </span><br></pre></td></tr></table></figure>
+<p>想要命令快速找到  which xxx 来验证，其实就是提前将命令的目录配置在环境变量$PATH<br>echo $PATH 来查看是否将命令的目录配置上！</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">[root@redhat001 ~]# echo $PATH</span><br><span class="line">/home/dwz/app/python3/bin:/usr/java/jdk1.8.0_181/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin</span><br><span class="line">[root@redhat001 ~]# jjj</span><br><span class="line">-bash: jjj: command not found</span><br><span class="line">[root@redhat001 ~]# </span><br></pre></td></tr></table></figure>
+<p> command not found<br> a.没安装上<br> b.路径没配置</p>
+<p> <strong>7.定时</strong> </p>
+<p> 脚本:<br> <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[root@redhat001 ~]# </span><br><span class="line">[root@redhat001 ~]# vi ruoze.sh</span><br></pre></td></tr></table></figure></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line">#!/bin/bash</span><br><span class="line">date</span><br><span class="line">[root@redhat001 ~]# </span><br><span class="line">[root@redhat001 ~]# </span><br><span class="line">[root@redhat001 ~]# ll</span><br><span class="line">total 8</span><br><span class="line">drwxr-xr-x 2 root root  30 Apr 22 22:50 dir1</span><br><span class="line">-rw-r--r-- 1 root root 128 Apr 22 22:49 dir1.tar.gz</span><br><span class="line">-rw-r--r-- 1 root root  19 Apr 22 23:02 ruoze.sh</span><br><span class="line">[root@redhat001 ~]# ./ruoze.sh</span><br><span class="line">-bash: ./ruoze.sh: Permission denied</span><br><span class="line">[root@redhat001 ~]# sh ./ruoze.sh</span><br><span class="line">Wed Apr 22 23:02:36 CST 2020</span><br><span class="line">[root@redhat001 ~]# chmod 744 ruoze.sh</span><br><span class="line">[root@redhat001 ~]# ll</span><br><span class="line">total 8</span><br><span class="line">drwxr-xr-x 2 root root  30 Apr 22 22:50 dir1</span><br><span class="line">-rw-r--r-- 1 root root 128 Apr 22 22:49 dir1.tar.gz</span><br><span class="line">-rwxr--r-- 1 root root  19 Apr 22 23:02 ruoze.sh</span><br><span class="line">[root@redhat001 ~]# ./ruoze.sh </span><br><span class="line">Wed Apr 22 23:03:17 CST 2020</span><br><span class="line">[root@redhat001 ~]# </span><br><span class="line">[root@redhat001 ~]# </span><br><span class="line">[root@redhat001 ~]# date</span><br><span class="line">Wed Apr 22 23:03:21 CST 2020</span><br><span class="line"></span><br><span class="line">[root@redhat001 ~]# crontab -e</span><br><span class="line">* * * * * /root/ruoze.sh &gt;&gt; /root/ruoze.log</span><br></pre></td></tr></table></figure>
+<p>分<br>小时<br>日<br>月<br>周</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">* 表示 每**</span><br><span class="line">*/6 * * * * 每6分钟</span><br></pre></td></tr></table></figure>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">[root@redhat001 ~]# vi ruoze2.sh</span><br><span class="line">#!/bin/bash</span><br><span class="line">for((i=1;i&lt;=6;i++));</span><br><span class="line">do</span><br><span class="line">	date</span><br><span class="line">	sleep 10s</span><br><span class="line">done</span><br><span class="line">[root@redhat001 ~]# chmod +x ruoze2.sh</span><br></pre></td></tr></table></figure>
+<p><strong>7.后台执行脚本</strong></p>
+<p>nohup  /root/ruoze.sh &gt;&gt; /root/ruoze.log 2&gt;&amp;1 &amp;  生产标准写法</p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/11/13/Linux%E6%93%8D%E4%BD%9C%E6%8C%87%E4%BB%A4%E4%BA%8C/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="zhawp">
+      <meta itemprop="description" content="SHARINGBLOG">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="holosxy.github.io">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2022/11/13/Linux%E6%93%8D%E4%BD%9C%E6%8C%87%E4%BB%A4%E4%BA%8C/" class="post-title-link" itemprop="url">Linux操作指令二</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2022-11-13 14:07:07 / 修改时间：14:10:01" itemprop="dateCreated datePublished" datetime="2022-11-13T14:07:07+08:00">2022-11-13</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p><strong>Part2主要是Linux中用户和用户组权限管理问题</strong></p>
+<p><strong>1.用户 用户组</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">[root@redhat001 ~]# ll /usr/sbin/user*</span><br><span class="line">-rwxr-x--- 1 root root 118192 Nov  6  2016 /usr/sbin/useradd</span><br><span class="line">-rwxr-x--- 1 root root  80360 Nov  6  2016 /usr/sbin/userdel</span><br><span class="line">-rwxr-x--- 1 root root 113840 Nov  6  2016 /usr/sbin/usermod</span><br><span class="line">-rwsr-xr-x 1 root root  11296 Apr 13  2017 /usr/sbin/usernetctl</span><br><span class="line">[root@redhat001 ~]# </span><br><span class="line">[root@redhat001 ~]# </span><br><span class="line">[root@redhat001 ~]# ll /usr/sbin/group*</span><br><span class="line">-rwxr-x--- 1 root root 65480 Nov  6  2016 /usr/sbin/groupadd</span><br><span class="line">-rwxr-x--- 1 root root 57016 Nov  6  2016 /usr/sbin/groupdel</span><br><span class="line">-rwxr-x--- 1 root root 57064 Nov  6  2016 /usr/sbin/groupmems</span><br><span class="line">-rwxr-x--- 1 root root 76424 Nov  6  2016 /usr/sbin/groupmod</span><br><span class="line">[root@redhat001 ~]# </span><br><span class="line">[root@redhat001 ~]# useradd sxy</span><br><span class="line">[root@redhat001 ~]# id sxy</span><br><span class="line">uid=1004(sxy) gid=1004(sxy) groups=1004(sxy)</span><br><span class="line">[root@redhat001 ~]# </span><br></pre></td></tr></table></figure>
+<p>创建一个普通用户  用户名称 sxy<br>同时也会创建一个 sxy用户组<br>设置sxy用户的组为sxy,且把这个sxy用户组设置为 主组<br>同时也创建家目录  /home/sxy </p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[root@redhat001 ~]# ll /home</span><br><span class="line">drwx------   2 sxy  sxy    59 Apr 19 20:10 sxy</span><br></pre></td></tr></table></figure>
+<p>用户存储信息 /etc/passwd<br>用户组       /etc/group</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">[root@redhat001 ~]# userdel sxy</span><br><span class="line">[root@redhat001 ~]# useradd sxy</span><br><span class="line">useradd: warning: the home directory already exists.</span><br><span class="line">Not copying any file from skel directory into it.</span><br><span class="line">Creating mailbox file: File exists</span><br><span class="line">[root@redhat001 ~]# </span><br></pre></td></tr></table></figure>
+
+<p>样式丢失</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line">[root@redhat001 ~]# su - sxy</span><br><span class="line">Last login: Sun Apr 19 20:16:54 CST 2020 on pts/0</span><br><span class="line">[sxy@redhat001 ~]$ ll -a</span><br><span class="line">total 16</span><br><span class="line">drwx------  2 sxy sxy  79 Apr 19 20:16 .</span><br><span class="line">drwxr-xr-x. 7 root  root   67 Apr 19 20:10 ..</span><br><span class="line">-rw-------  1 sxy sxy  28 Apr 19 20:17 .bash_history</span><br><span class="line">-rw-r--r--  1 sxy sxy  18 Apr 11  2018 .bash_logout</span><br><span class="line">-rw-r--r--  1 sxy sxy 193 Apr 11  2018 .bash_profile</span><br><span class="line">-rw-r--r--  1 sxy sxy 231 Apr 11  2018 .bashrc</span><br><span class="line">[sxy@redhat001 ~]$ rm -rf .bash*</span><br><span class="line">[sxy@redhat001 ~]$ ll -a</span><br><span class="line">total 0</span><br><span class="line">drwx------  2 sxy sxy  6 Apr 19 20:17 .</span><br><span class="line">drwxr-xr-x. 7 root  root  67 Apr 19 20:10 ..</span><br><span class="line">[sxy@redhat001 ~]$ </span><br><span class="line">[sxy@redhat001 ~]$ </span><br><span class="line">[sxy@redhat001 ~]$ exit</span><br><span class="line">logout</span><br><span class="line">[root@redhat001 ~]# su - sxy</span><br><span class="line">Last login: Sun Apr 19 20:17:08 CST 2020 on pts/0</span><br><span class="line">-bash-4.2$ </span><br><span class="line">-bash-4.2$ </span><br><span class="line">-bash-4.2$ </span><br><span class="line">-bash-4.2$ id</span><br><span class="line">uid=1004(sxy) gid=1004(sxy) groups=1004(sxy)</span><br><span class="line">-bash-4.2$ </span><br><span class="line">-bash-4.2$ cp /etc/skel/.* ./</span><br><span class="line">cp: omitting directory ‘/etc/skel/.’</span><br><span class="line">cp: omitting directory ‘/etc/skel/..’</span><br><span class="line">-bash-4.2$ ll -a</span><br><span class="line">total 16</span><br><span class="line">drwx------  2 sxy sxy  79 Apr 19 20:20 .</span><br><span class="line">drwxr-xr-x. 7 root  root   67 Apr 19 20:10 ..</span><br><span class="line">-rw-------  1 sxy sxy  39 Apr 19 20:18 .bash_history</span><br><span class="line">-rw-r--r--  1 sxy sxy  18 Apr 19 20:20 .bash_logout</span><br><span class="line">-rw-r--r--  1 sxy sxy 193 Apr 19 20:20 .bash_profile</span><br><span class="line">-rw-r--r--  1 sxy sxy 231 Apr 19 20:20 .bashrc</span><br><span class="line">-bash-4.2$ </span><br></pre></td></tr></table></figure>
+
+<p>样式恢复</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">-bash-4.2$ </span><br><span class="line">-bash-4.2$ exit</span><br><span class="line">logout</span><br><span class="line">[root@redhat001 ~]# su - sxy</span><br><span class="line">Last login: Sun Apr 19 20:18:56 CST 2020 on pts/0</span><br><span class="line">[sxy@redhat001 ~]$ </span><br><span class="line">[sxy@redhat001 ~]$ </span><br><span class="line">[sxy@redhat001 ~]$ </span><br></pre></td></tr></table></figure>
+
+<p>添加用户到bigdata用户组</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">[root@redhat001 ~]# groupadd bigdata</span><br><span class="line"></span><br><span class="line">[root@redhat001 ~]# usermod    -a -G bigdata      sxy</span><br><span class="line">[root@redhat001 ~]# id sxy</span><br><span class="line">uid=1004(sxy) gid=1004(sxy) groups=1004(sxy),1005(bigdata)</span><br><span class="line">[root@redhat001 ~]# </span><br><span class="line">[root@redhat001 ~]# </span><br><span class="line">[root@redhat001 ~]# usermod -g bigdata sxy</span><br><span class="line">[root@redhat001 ~]# </span><br><span class="line">[root@redhat001 ~]# id sxy</span><br><span class="line">uid=1004(sxy) gid=1005(bigdata) groups=1005(bigdata)</span><br><span class="line">[root@redhat001 ~]# </span><br><span class="line">[root@redhat001 ~]# </span><br><span class="line">[root@redhat001 ~]# usermod    -a -G sxy      sxy</span><br><span class="line">[root@redhat001 ~]# </span><br><span class="line">[root@redhat001 ~]# id sxy</span><br><span class="line">uid=1004(sxy) gid=1005(bigdata) groups=1005(bigdata),1004(sxy)</span><br><span class="line">[root@redhat001 ~]# </span><br></pre></td></tr></table></figure>
+<p><strong>2.设置密码passwd</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">[root@redhat001 ~]# passwd</span><br><span class="line">Changing password for user root.</span><br><span class="line">New password: </span><br><span class="line"></span><br><span class="line">[root@redhat001 ~]# passwd sxy</span><br><span class="line">Changing password for user sxy.</span><br><span class="line">New password: </span><br><span class="line">BAD PASSWORD: The password is shorter than 8 characters</span><br><span class="line">Retype new password: </span><br><span class="line">passwd: all authentication tokens updated successfully.</span><br><span class="line">[root@redhat001 ~]# </span><br></pre></td></tr></table></figure>
+<p><strong>3.切换用户</strong></p>
+<p>su sxy<br>su - sxy 代表该用户切换到家目录，且执行环境变量文件</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">[root@redhat001 ~]# pwd</span><br><span class="line">/root</span><br><span class="line">[root@redhat001 ~]# su sxy</span><br><span class="line">[sxy@redhat001 root]$ pwd</span><br><span class="line">/root</span><br><span class="line">[sxy@redhat001 root]$ exit</span><br><span class="line">exit</span><br><span class="line">[root@redhat001 ~]# su - sxy</span><br><span class="line">Last login: Sun Apr 19 20:33:23 CST 2020 on pts/2</span><br><span class="line">[sxy@redhat001 ~]$ pwd</span><br><span class="line">/home/sxy</span><br><span class="line">[sxy@redhat001 ~]$ </span><br></pre></td></tr></table></figure>
+
+<p><strong>4.sudo  普通用户临时使用root的最大权限</strong></p>
+<p>vi /etc/sudoers<br>sxy   ALL=(root)      NOPASSWD:ALL</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">[sxy@redhat001 ~]$ cat /root/rz.log</span><br><span class="line">cat: /root/rz.log: Permission denied</span><br><span class="line">[sxy@redhat001 ~]$ </span><br><span class="line">[sxy@redhat001 ~]$ </span><br><span class="line">[sxy@redhat001 ~]$ sudo cat /root/rz.log</span><br><span class="line">www.redhat.com</span><br><span class="line">[sxy@redhat001 ~]$ </span><br></pre></td></tr></table></figure>
+
+<p><strong>5./etc/passwd文件</strong></p>
+<p>sxy:x:1004:1005::/home/sxy:/sbin/nologin  提示<br>sxy:x:1004:1005::/home/sxy:/usr/bin/false 没提示 </p>
+<p>CDH平台  hdfs yarn hive hbase<br>su - yarn 不成功的 </p>
+<p>/sbin/nologin /usr/bin/false ===》/bin/bash</p>
+<p><strong>6.权限</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">[root@redhat001 ~]# ll</span><br><span class="line">-rw-r--r-- 1 root root  9 Apr 18 20:50 22.log</span><br><span class="line">drwxr-xr-x 2 root root  6 Apr 15 22:12 dir3</span><br></pre></td></tr></table></figure>
+<p>第一个字母：d文件夹 -文件 l连接<br>后面9个字母,3个字母为一组:<br>rw- r– r–</p>
+<p>r: read  读权限 4<br>w: write 写权限 2<br>x: 执行         1<br>-: 没权限       0  占位 </p>
+<p>7=4 2 1<br>5=4 1<br>6=4 2</p>
+<p><strong>rw- 第一组 6  代表文件或文件夹的所属用户，读写权限<br>r– 第二组 4  代表文件或文件夹的所属用户组，读权限<br>r– 第三组 4  代表其他用户组的用户对这个文件或文件夹，读权限</strong></p>
+<p>rw-r–r–    root root     22.log</p>
+<p>关于权限：<br><strong>chmod -R 777          文件或文件夹<br>chown -R 用户:用户组  文件或文件夹</strong></p>
+<p>3=2+1 w x</p>
+<p>r-x</p>
+<p>案例:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">[root@redhat001 tmp]# vi sxy.log</span><br><span class="line">www.redhat.com</span><br><span class="line">[sxy@redhat001 tmp]$ cat  sxy.log </span><br><span class="line">www.redhat.com</span><br><span class="line">[sxy@redhat001 tmp]$ </span><br></pre></td></tr></table></figure>
+
+<p>收回其他组的r权限 </p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">[root@redhat001 tmp]# chmod 640 sxy.log</span><br><span class="line">[sxy@redhat001 tmp]$ cat  sxy.log </span><br><span class="line">cat: sxy.log: Permission denied</span><br></pre></td></tr></table></figure>
+
+<p><strong>7.大小</strong><br>文件： ll -h 、du -sh<br>文件夹:        du -sh</p>
+<p><strong>8.搜索 find</strong></p>
+<p>接手大数据平台，服务器登录，大数据组件安装目录在哪？</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">find / -name &#x27;*hadoop*&#x27;</span><br><span class="line">find /home/hadoop/ -name &#x27;*hadoop*&#x27;</span><br></pre></td></tr></table></figure>
+<p>补充:<br>history 命令<br>ps -ef 查看进程</p>
+<p><strong>9.vi命令</strong></p>
+<p>9.1 正常编辑一个文件，要正常退出 wq<br>反之:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">-rw-r--r--   1 root  root       16 Apr 19 21:26 2.log</span><br><span class="line">-rw-r--r--   1 root  root    12288 Apr 19 21:31 .2.log.swp</span><br></pre></td></tr></table></figure>
+<p>rm -rf .2.log.swp</p>
+<p><strong>9.2 粘贴的坑，必须进入编辑模式，否则第一行内容丢失 不完整</strong></p>
+<p><strong>9.3 搜索 尾行–》 /error</strong></p>
+<p><strong>9.4 行号</strong></p>
+<p>尾行–》 set nu   设置行号<br>         set nonu 取消行号</p>
+<p>f 也是可以显示 当前光标的所在的行</p>
+<p><strong>9.5 常用快捷方式</strong></p>
+<p>dd 删除当前行<br>dG 删除当前及以下所有行<br>ndd 删除当前及以下n行</p>
+<p>gg 跳转到第一行的第一个字母<br>G  跳转到最后一行的第一个字母<br>shift+$ 行尾 </p>
+<p>场景：<br>清空这个文件内容，从另外一个文件内容 拷贝过来<br>gg–》dG   –》 i  –&gt;鼠标右键单击 粘贴上</p>
+<p>清空补充：<br>cat /dev/null &gt; 1.log<br>echo  “” &gt; 2.log</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">[root@redhat001 ~]# ll</span><br><span class="line">total 16</span><br><span class="line">-rw-r--r-- 1 root  root     0 Apr 19 21:58 1.log</span><br><span class="line">-rw-r--r-- 1 root  root     1 Apr 19 21:58 2.log</span><br></pre></td></tr></table></figure>
+<p>场景:<br>shell脚本，数据文件清空操作，根据字节大小判断是否清空完成</p>
+<p>echo  “” &gt; 2.log<br>if filezie &gt; 0 then<br>   业务不操作<br>else<br>    2.log 灌业务数据</p>
+<p>true &gt; 1.log 也是清空文件内容 0字节</p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/11/13/Linux%E6%93%8D%E4%BD%9C%E6%8C%87%E4%BB%A4%E4%B8%80/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="zhawp">
+      <meta itemprop="description" content="SHARINGBLOG">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="holosxy.github.io">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2022/11/13/Linux%E6%93%8D%E4%BD%9C%E6%8C%87%E4%BB%A4%E4%B8%80/" class="post-title-link" itemprop="url">Linux操作指令一</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2022-11-13 14:07:06 / 修改时间：14:09:01" itemprop="dateCreated datePublished" datetime="2022-11-13T14:07:06+08:00">2022-11-13</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h4 id="我们学习Linux用的Centos7，之前生产用过suse，redhat"><a href="#我们学习Linux用的Centos7，之前生产用过suse，redhat" class="headerlink" title="我们学习Linux用的Centos7，之前生产用过suse，redhat"></a>我们学习Linux用的Centos7，之前生产用过suse，redhat</h4><h4 id="window连接工具选择xshell或者crt"><a href="#window连接工具选择xshell或者crt" class="headerlink" title="window连接工具选择xshell或者crt"></a>window连接工具选择xshell或者crt</h4><p><strong>1.root目录</strong><br><code>[root@redhat001 ~]#</code><br>root 默认管理员  最大权限<br>redhat001 机器名称<br>~ 当前该用户的 家目录  /root</p>
+<p><strong>2.pwd 查看当前光标所在的目录 路径</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">[root@redhat001 ~]# pwd</span><br><span class="line">/root</span><br><span class="line">[root@redhat001 ~]# </span><br></pre></td></tr></table></figure>
+
+<p><strong>3.ls 查看</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[root@redhat001 ~]# ls</span><br></pre></td></tr></table></figure>
+<p>ls 显示文件夹 文件名称<br>ls -l 显示额外信息  权限 用户用户组 时间 大小<br>ls -l -a  也显示隐藏文件夹 文件</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">[root@redhat001 ~]# ls -l -a</span><br><span class="line">total 40</span><br><span class="line">dr-xr-x---.  6 root root 4096 Apr 15 21:51 .</span><br><span class="line">dr-xr-xr-x. 17 root root 4096 Aug  8  2018 ..</span><br><span class="line">-rw-------.  1 root root 3814 Apr 15 21:49 .bash_history</span><br><span class="line">-rw-r--r--.  1 root root   18 Dec 29  2013 .bash_logout</span><br></pre></td></tr></table></figure>
+<p>隐藏文件夹 文件是以.开头 </p>
+<p>ls -l -h  仅仅查看文件的大小<br>ls -l -r -t  按时间排序如何快速找到哪些文件 更新了</p>
+<p>ls -l ==》ll 等价<br>ll -a<br>ll -rt<br>ll -h</p>
+<p><strong>4.mkdir 创建文件夹</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">[root@redhat001 ~]# mkdir redhat</span><br><span class="line">[root@redhat001 ~]# </span><br><span class="line">[root@redhat001 ~]# ls redhat</span><br><span class="line">[root@redhat001 ~]# </span><br></pre></td></tr></table></figure>
+<p>mkdir dir1 dir2 dir3 并<br>mkdir -p dir4/dir5/dir6  串 级联创建</p>
+<p><strong>5.cd 切换目录 路径</strong><br><code>[root@redhat001 ~]# cd / </code><br>Linux系统 从根目录 标识 /</p>
+<p>cd dir1  进入dir1文件夹<br>cd ../ 退上一层目录<br>cd ../../  2层</p>
+<p>root用户     家目录  /root<br>普通xx用户   家目录  /home/xx<br>家目录 是 ~ 表示<br>如何进家目录:<br>    cd /root<br>    cd 直接回车<br>    cd ~</p>
+<p>cd - 回退到上一次的目录</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">[root@redhat001 ~]# cd dir4</span><br><span class="line">[root@redhat001 dir4]# cd dir5/dir6</span><br><span class="line">[root@redhat001 dir6]# </span><br><span class="line">[root@redhat001 dir6]# cd -</span><br><span class="line">/root/dir4</span><br><span class="line">[root@redhat001 dir4]# </span><br></pre></td></tr></table></figure>
+
+
+<p><strong>6.命令帮助 help</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[root@redhat001 /]# ls --help</span><br><span class="line">Usage: ls [OPTION]... [FILE]...</span><br></pre></td></tr></table></figure>
+<p>[]标识的  可选<br>…  多个参数</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">Usage: ls [OPTIONS]</span><br><span class="line">Usage: ls XXX [OPTIONS]</span><br><span class="line"></span><br><span class="line">List information about the FILEs (the current directory by default).</span><br><span class="line">Sort entries alphabetically if none of -cftuvSUX nor --sort is specified.</span><br><span class="line"></span><br><span class="line">Mandatory arguments to long options are mandatory for short options too.</span><br><span class="line">  -a, --all                  do not ignore entries starting with .</span><br><span class="line">  -A, --almost-all           do not list implied . and ..</span><br></pre></td></tr></table></figure>
+
+<p><strong>7.清除屏幕 clear</strong></p>
+<p>8.mv移动  cp复制<br>mv是始终一份  快<br>cp是两份      慢</p>
+<p>标准写法:<br>mv dir1  data/dir1<br>cp -r dir2 data/dir2</p>
+<p>支持修改名称<br>mv  dir2 dir22<br>cp -r dir3 dir33</p>
+<p><strong>8.创建文件</strong><br>touch 1.log  空文件<br>vi    2.log<br>    默认命令行<br>    i键 编辑模式，进行编辑<br>    esc键 从编辑模式–》命令行模式<br>    shift+:键 从命令行模式–》尾行模式，输入wq 保存退出</p>
+<p>主要场景是为了  覆盖内容 或者 追加内容<br>echo “data” &gt; 3.log<br>打印一句话       </p>
+<p>创建或覆盖    【高危命令1】<br>追加</p>
+<p><strong>9.查看文件内容 log config data</strong><br>cat  文件内容一下子全部显示  ctrl+z 中断<br>more 文件内容一页页往下翻，按空格往下  回退不了 q退出<br>less 文件内容 按上下键   q退出</p>
+<p>cat 文件内容 少<br>more 文件内容 稍微多点</p>
+<p>tail 实时查看文件最新内容<br>    tail -f xxx.log<br>    tail -F yyy.log   =-f+ retry</p>
+<p>场景: 采集业务log日志内容 log4j<br>     规则: 每份100m 保留10份<br>     系统–》 erp.log 90m …100m<br>            mv erp.log  erp.log1<br>        touch erp.log</p>
+<pre><code>    ll命令查看
+    erp.log 
+    erp.log1
+    erp.log2
+    ....
+    erp.log10
+          
+</code></pre>
+<p>大数据Flume组件 exec source:  tail -F erp.log</p>
+<p>想要查看文件内容倒数100行,同时实时监控<br>tail -100f   xxx.log<br>tail -100F   xxx.log  错误的 </p>
+<p>文件内容超多  定位ERROR 信息<br>cat xxx.log | grep ERROR   当前行<br>cat xxx.log | grep -A 5 ERROR   后5行<br>cat xxx.log | grep -B 5 ERROR   前5行<br>cat xxx.log | grep -C 5 ERROR   前后各5行</p>
+<p>| 管道符  grep 过滤</p>
+<p>比如 xxx.log ERROR 很多  上万个 </p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">cat xxx.log | grep -C 5 ERROR &gt; 20200418error.log</span><br><span class="line">more 20200418error.log  </span><br></pre></td></tr></table></figure>
+
+<p>文件内容100m   :<br>    vi xxx.log<br>        shift+:<br>        /<br>        ERROR<br>寻找下载到window ，editplus（window），notepad++ ，sublime（widnow  mac）工具 搜索  统计 校验  </p>
+<p><strong>10. 上传下载</strong></p>
+<p>安装工具包 yum install -y lrzsz<br>sz xxx.log是下载 Linux–》window<br>rz 是上传   window–》Linux</p>
+<p><strong>11.别名 alias</strong></p>
+<figure class="highlight plaintext"><figcaption><span>log]# alias</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">alias cp=&#x27;cp -i&#x27;</span><br><span class="line">alias egrep=&#x27;egrep --color=auto&#x27;</span><br><span class="line">alias fgrep=&#x27;fgrep --color=auto&#x27;</span><br><span class="line">alias grep=&#x27;grep --color=auto&#x27;</span><br><span class="line">alias l.=&#x27;ls -d .* --color=auto&#x27;</span><br><span class="line">alias ll=&#x27;ls -l --color=auto&#x27;</span><br><span class="line">alias ls=&#x27;ls --color=auto&#x27;</span><br><span class="line">alias mv=&#x27;mv -i&#x27;</span><br><span class="line">alias rm=&#x27;rm -i&#x27;</span><br><span class="line">alias which=&#x27;alias | /usr/bin/which --tty-only --read-alias --show-dot --show-tilde&#x27;</span><br><span class="line">[root@redhat001 log]# </span><br></pre></td></tr></table></figure>
+
+<p>只在当前会话生效 </p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">[root@redhat001 log]#  alias jj=&#x27;cd /tmp&#x27;</span><br><span class="line">其他会话不生效</span><br><span class="line">[root@redhat001 ~]# jj</span><br><span class="line">-bash: jj: command not found</span><br></pre></td></tr></table></figure>
+<p>是因为没有在环境变量文件配置 </p>
+<p><strong>12.环境变量</strong></p>
+<p>全局 : /etc/profile    所有用户都可以使用  </p>
+<p>个人: ~/.bash_profile   只能是当前用户使用  其他不能使用<br>      ~/.bashrc </p>
+<p> 场景: ssh 远程执行B机器 命令  找不到   java command not found<br>          直接登录B机器 命令是找到的   which java有的<br>命令的环境变量配置在.bash_profile  是不正确的。<br>        应该配置在.bashrc文件</p>
+<p>生效文件:<br>    <code>source /etc/profile</code><br>    <code>source ~/.bash_profile</code><br>    <code>source ~/.bashrc </code></p>
+<p>   cd 进家目录<br>. .bashrc</p>
+<p><strong>13.创建用户</strong></p>
+<p>root 默认管理员用户 已存在的<br>sxy</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">[root@redhat001 tmp]# useradd sxy</span><br><span class="line">[root@redhat001 tmp]# su - sxy</span><br><span class="line">[sxy@redhat001 ~]$ pwd</span><br><span class="line">/home/sxy</span><br><span class="line">[sxy@redhat001 ~]$ </span><br><span class="line"></span><br><span class="line">[sxy@redhat001 ~]$ jj  是因为jj配置在全局变量文件 </span><br><span class="line">[sxy@redhat001 tmp]$ pwd</span><br><span class="line">/tmp</span><br><span class="line">[sxy@redhat001 tmp]$ </span><br><span class="line">[sxy@redhat001 tmp]$ </span><br></pre></td></tr></table></figure>
+
+<p><strong>14.自动补全  释放你的手指 节省力量</strong></p>
+<p>tab键一次，只有1个 命令自动补全<br>           多个  没响应<br>   按二次，会把当前匹配到的 所有 打印出来，再挑选</p>
+<p><strong>15.history 历史命令</strong></p>
+<p>!2  执行第二行命令 </p>
+<p>history -c 清空历史 </p>
+<p>直连 服务器           ok<br>跳板机(vpn)  服务器   ok<br>堡垒机  敲一个命令 都记录  堡垒机系统里   web界面 可视化</p>
+<p><strong>16.【高危命令】 rm</strong><br>千万不要做 rm -rf / 一了百了</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">[root@redhat001 ~]# rm 11.log</span><br><span class="line">rm: remove regular file ‘11.log’? y</span><br><span class="line">[root@redhat001 ~]# rm -f 1.log</span><br><span class="line">[root@redhat001 ~]# rm -r dir22</span><br><span class="line">rm: remove directory ‘dir22’? y</span><br><span class="line">[root@redhat001 ~]# rm -rf dir33</span><br><span class="line">[root@redhat001 ~]# </span><br></pre></td></tr></table></figure>
+
+<p>场景:<br>脚本里<br>LOG_PATH=/xxx/yyy<br>业务逻辑判断 去赋值<br>   漏了一种  没有赋值<br>rm -rf ${LOG_PATH}/*  ==》rm -rf /*</p>
+<p>该怎么避免 ：<br>每次删除之前 都判断${LOG_PATH} 是否存在 </p>
+<p>补充:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">[root@JD ~]# hostnamectl set-hostname redhat001</span><br><span class="line">[root@redhat001 ~]# ifconfig 找内网ip 或者 京东云控制台查看  </span><br><span class="line">[root@redhat001 ~]# vi /etc/hosts</span><br><span class="line">127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4</span><br><span class="line">::1         localhost localhost.localdomain localhost6 localhost6.localdomain6</span><br><span class="line">192.168.0.3 redhat001</span><br></pre></td></tr></table></figure>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="http://example.com/2022/11/10/Hadoop%E5%A6%82%E4%BD%95%E4%BD%BF%E7%94%A8lzo%E5%8E%8B%E7%BC%A9%E5%AE%8C%E6%95%B4%E7%AF%87/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -494,12 +880,12 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">4</span>
+          <span class="site-state-item-count">7</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-tags">
-        <span class="site-state-item-count">3</span>
+        <span class="site-state-item-count">4</span>
         <span class="site-state-item-name">标签</span>
       </div>
   </nav>
