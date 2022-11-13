@@ -148,6 +148,110 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/11/13/HDFS%E6%9E%B6%E6%9E%84%E5%8E%9F%E7%90%86/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="zhawp">
+      <meta itemprop="description" content="SHARINGBLOG">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="holosxy.github.io">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2022/11/13/HDFS%E6%9E%B6%E6%9E%84%E5%8E%9F%E7%90%86/" class="post-title-link" itemprop="url">HDFS架构原理</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2022-11-13 15:48:17 / 修改时间：16:15:38" itemprop="dateCreated datePublished" datetime="2022-11-13T15:48:17+08:00">2022-11-13</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p><strong>1.HDFS主从架构</strong></p>
+<p>角色:<br>namenode  名称节点 nn<br>a.文件名称<br>b.文件的目录结构<br>c.文件的属性 权限 创建时间 副本数<br>d.一个文件被对应切割哪些数据块 副本数的块  9块</p>
+<p>===》数据块对应分布在哪些节点上</p>
+<p><strong>blockmap 块映射  当然nn节点是不会持久化存储这种映射关系<br>是通过集群的启动和运行时，dn定期发送blockreport给nn，然后<br>nn就在内存中动态维护这种映射关系</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@data001 ~]$ hdfs dfs -ls  /wordcount2/input/</span><br><span class="line">20/05/10 20:12:38 WARN util.NativeCodeLoader: Unable to load native-hadoop </span><br><span class="line">library for your platform... using builtin-java classes where applicable</span><br><span class="line">Found 2 items</span><br><span class="line">-rw-r--r--   1 hadoop supergroup     35     2020-05-09 21:34 /wordcount2/input/1.log</span><br><span class="line">-rw-r--r--   1 hadoop supergroup     29     2020-05-09 21:34 /wordcount2/input/2.log</span><br><span class="line">[hadoop@data001 ~]$ </span><br></pre></td></tr></table></figure>
+
+
+<p>作用:</p>
+<h5 id="文件系统的命名空间-其实就是维护文件系统树的文件和文件夹"><a href="#文件系统的命名空间-其实就是维护文件系统树的文件和文件夹" class="headerlink" title="文件系统的命名空间  其实就是维护文件系统树的文件和文件夹"></a>文件系统的命名空间  其实就是维护文件系统树的文件和文件夹</h5><h5 id="这些形式是以两种文件来永久的保存在本地磁盘的"><a href="#这些形式是以两种文件来永久的保存在本地磁盘的" class="headerlink" title="这些形式是以两种文件来永久的保存在本地磁盘的"></a>这些形式是以两种文件来永久的保存在本地磁盘的</h5><h5 id="镜像文件-fsimage"><a href="#镜像文件-fsimage" class="headerlink" title="镜像文件 fsimage"></a>镜像文件 fsimage</h5><h5 id="编辑日志文件-editlogs"><a href="#编辑日志文件-editlogs" class="headerlink" title="编辑日志文件 editlogs"></a>编辑日志文件 editlogs</h5><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@data001 current]$ pwd</span><br><span class="line">/home/hadoop/tmp/dfs/name/current</span><br><span class="line">[hadoop@data001 current]$ ll</span><br><span class="line">edits_0000000000000000375-0000000000000000376</span><br><span class="line">edits_0000000000000000377-0000000000000000378</span><br><span class="line">edits_0000000000000000379-0000000000000000380</span><br><span class="line">edits_0000000000000000381-0000000000000000382</span><br><span class="line">edits_0000000000000000383-0000000000000000384</span><br><span class="line">edits_0000000000000000385-0000000000000000386</span><br><span class="line">edits_inprogress_0000000000000000387</span><br><span class="line">fsimage_0000000000000000384</span><br><span class="line">fsimage_0000000000000000384.md5</span><br><span class="line">fsimage_0000000000000000386</span><br><span class="line">fsimage_0000000000000000386.md5</span><br></pre></td></tr></table></figure>
+
+<p>secondary namenode  第二名称节点  snn</p>
+<p>a.fsimage editlog定期拿过来合并 备份 推送</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@data001 current]$ pwd</span><br><span class="line">/home/hadoop/tmp/dfs/namesecondary/current</span><br><span class="line">[hadoop@data001 current]$ </span><br><span class="line">edits_0000000000000000377-0000000000000000378</span><br><span class="line">edits_0000000000000000379-0000000000000000380</span><br><span class="line">edits_0000000000000000381-0000000000000000382</span><br><span class="line">edits_0000000000000000383-0000000000000000384</span><br><span class="line">edits_0000000000000000385-0000000000000000386</span><br><span class="line">fsimage_0000000000000000384</span><br><span class="line">fsimage_0000000000000000384.md5</span><br><span class="line">fsimage_0000000000000000386</span><br><span class="line">fsimage_0000000000000000386.md5</span><br></pre></td></tr></table></figure>
+
+<p>fsimage_0000000000000000384<br>snn将老大的edits_0000000000000000385-0000000000000000386<br>检查点动作checkpoint合并为fsimage_0000000000000000386将这个<br>386文件推送给老大，那么新的数据写读的记录就存放在<br>edits_inprogress_0000000000000000387 日志文件是变化的追加</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">dfs.namenode.checkpoint.period  3600s </span><br><span class="line">dfs.namenode.checkpoint.txns    1000000 </span><br></pre></td></tr></table></figure>
+<p>为了解决单点故障，nn只有一个对外的，后来新增一个snn，1小时的备份<br>虽然能够减轻单点故障带来的丢失风险，但是在生产上还是不允许使用snn<br>11:00  snn 备份<br>11:30  数据一直写到这  突然nn节点 磁盘故障 无法恢复<br>拿snn的最新的一个fsimage文件恢复，那么只能恢复 11点的数据<br>在生产上是 不用snn，是启动另外一个NN进程(实时备份，实时准备替换nn，<br>变为活动的nn)叫做HDFS HA</p>
+<p><strong>datanode  数据节点  dn</strong></p>
+<p>a.存储数据块和数据块的校验和</p>
+<p>作用:<br>a.每隔3s发送心跳给nn,告诉 我还活着</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">dfs.heartbeat.interval  3s</span><br></pre></td></tr></table></figure>
+<p>b.每隔一定的时间发生一次blockreport</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">dfs.blockreport.intervalMsec   21600000ms=6小时</span><br><span class="line">dfs.datanode.directoryscan.interval  21600s=6小时</span><br></pre></td></tr></table></figure>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@data001 subdir0]$ pwd</span><br><span class="line">/home/hadoop/tmp/dfs/data/current/BP-672629417-192.168.0.3-1588775739687/currentdir0]$ </span><br></pre></td></tr></table></figure>
+
+
+<p><strong>2.HDFS写流程</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@data001 ~]$ echo &#x27;data&#x27; &gt;1.log</span><br><span class="line">[hadoop@data001 ~]$ </span><br><span class="line">[hadoop@data001 ~]$ hdfs dfs -put 1.log  /</span><br><span class="line">20/05/10 21:19:54 WARN util.NativeCodeLoader: Unable to load native-hadoop </span><br><span class="line">library for your platform... using builtin-java classes where applicable</span><br><span class="line">[hadoop@data001 ~]$ </span><br></pre></td></tr></table></figure>
+
+<p><img src="/images/hdfsarchitecture.jpg" alt="HDFS"></p>
+<h3 id="对用户操作是无感知的"><a href="#对用户操作是无感知的" class="headerlink" title="对用户操作是无感知的"></a>对用户操作是无感知的</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">1.HDFS Client调用FileSystem.create(filePath)方法，去和NN进行【RPC】通信！</span><br><span class="line">NN 会去check这个路径的文件是否已经存在，是否有权限能够创建这个文件！</span><br><span class="line">假如都ok，就去创建一个新的文件，但是这时还没写数据，是不关联任何的block。</span><br><span class="line">nn根据上传的文件大小，根据块大小+副本数参数，</span><br><span class="line">计算要上传多少块和块存储在DN的位置。最终将这些信息返回给客户端，</span><br><span class="line">为【FSDataOutputStream】对象</span><br><span class="line"></span><br><span class="line">2.Client调用【FSDataOutputStream】对象的write方法，</span><br><span class="line">将第一个块的第一个副本数写第一个DN节点，</span><br><span class="line">写完去第二个副本写DN2；写完去第三个副本写DN3。当第三个副本写完，</span><br><span class="line">就返回一个ack packet确定包给DN2节点，</span><br><span class="line">当DN2节点收到这个ack packet确定包加上自己也是写完了，就返回一个</span><br><span class="line">ack packet确定包给第一个DN1节点，当DN1节点收到这个ack packet确定包</span><br><span class="line">加上自己也是写完了，将ack packet确定包返回给【FSDataOutputStream】</span><br><span class="line">对象，就标识第一个块的三个副本写完。其他块以此类推！</span><br><span class="line"></span><br><span class="line">3.当所有的块全部写完， client调用 【FSDataOutputStream】对象的close方法，</span><br><span class="line">关闭输出流。再次调用FileSystem.complete方法，告诉nn文件写成功!</span><br><span class="line">伪分布式 1台dn  副本数参数必然是设置1</span><br><span class="line">dn挂了，肯定不能写入</span><br></pre></td></tr></table></figure>
+
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">生产分布式 3台dn  副本数参数必然是设置3</span><br><span class="line">dn挂了，肯定不能写入</span><br><span class="line"></span><br><span class="line">生产分布式 &gt;3台dn  副本数参数必然是设置3</span><br><span class="line">dn挂了，能写入</span><br><span class="line"></span><br><span class="line">存活的alive dn节点数&gt;=副本数 就能写成功</span><br></pre></td></tr></table></figure>
+
+<p><strong>3.HDFS读流程</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@data001 ~]$ hdfs dfs -cat  /1.log</span><br><span class="line">20/05/10 21:53:19 WARN util.NativeCodeLoader: Unable to load </span><br><span class="line">native-hadoop library for your platform... using builtin-java </span><br><span class="line">classes where applicable data</span><br><span class="line">[hadoop@data001 ~]$ </span><br></pre></td></tr></table></figure>
+
+<p>对用户操作是无感知的 </p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">1.Client调用FileSystem的open(filePath),</span><br><span class="line">与NN进行RPC通信，返回该文件的部分或者全部的block列表</span><br><span class="line">也就是返回【FSDataInputStream】对象</span><br><span class="line"></span><br><span class="line">2.Client调用【FSDataInputStream】对象的read方法</span><br><span class="line">去与第一个块的最近的DN进行读取，读取完成后，会check，假如ok，就关闭与DN通信。</span><br><span class="line">假如读取失败，会记录DN+block信息，下次就不会从这个节点读取。那么就从第二个节点读取。</span><br><span class="line"></span><br><span class="line">然后去与第二个块的最近的DN进行读取，以此类推。</span><br><span class="line"></span><br><span class="line">假如当block列表全部读取完成，文件还没读取结束，就调用FileSystem从nn获取下一批次</span><br><span class="line">的block列表。</span><br><span class="line"></span><br><span class="line">3.Client调用【FSDataInputStream】对象close方法，关闭输入流。</span><br></pre></td></tr></table></figure>
+
+<p><strong>4.HDFS副本放置策略</strong></p>
+<p><img src="/images/HDFS%E5%89%AF%E6%9C%AC%E6%94%BE%E7%BD%AE%E7%AD%96%E7%95%A5.jpg" alt="HDFS"></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">机架 rack1 5   rack2 5</span><br><span class="line">生产上读写操作 尽量选择 某个DN节点</span><br><span class="line">第一个副本：</span><br><span class="line">放置在上传的DN节点；</span><br><span class="line">假如是非DN节点，就随机挑选一个磁盘不太慢，cpu不太忙的节点；</span><br><span class="line">第二个副本：</span><br><span class="line">放置在第一个副本不同的机架上的某个DN节点。</span><br><span class="line">第三个副本:</span><br><span class="line">与第二个副本相同机架的不同节点上。</span><br><span class="line">如果副本数设置更多，就随机放。</span><br></pre></td></tr></table></figure>
+
+
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="http://example.com/2022/11/13/Linux%E6%93%8D%E4%BD%9C%E6%8C%87%E4%BB%A4%E4%B8%89/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -746,7 +850,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">5</span>
+          <span class="site-state-item-count">6</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
