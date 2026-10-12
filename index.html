@@ -148,7 +148,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2022/11/13/HDFS%E6%9E%B6%E6%9E%84%E5%8E%9F%E7%90%86/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2026/10/12/%E7%94%9F%E4%BA%A7HDFS%20Block%E6%8D%9F%E5%9D%8F%E6%81%A2%E5%A4%8D%E6%9C%80%E4%BD%B3%E5%AE%9E%E8%B7%B5/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -162,7 +162,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/2022/11/13/HDFS%E6%9E%B6%E6%9E%84%E5%8E%9F%E7%90%86/" class="post-title-link" itemprop="url">HDFS架构原理</a>
+            <a href="/2026/10/12/%E7%94%9F%E4%BA%A7HDFS%20Block%E6%8D%9F%E5%9D%8F%E6%81%A2%E5%A4%8D%E6%9C%80%E4%BD%B3%E5%AE%9E%E8%B7%B5/" class="post-title-link" itemprop="url">生产HDFS Block损坏恢复最佳实践</a>
         </h2>
 
         <div class="post-meta">
@@ -171,10 +171,16 @@
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">发表于</span>
-              
 
-              <time title="创建时间：2022-11-13 15:48:17 / 修改时间：16:15:38" itemprop="dateCreated datePublished" datetime="2022-11-13T15:48:17+08:00">2022-11-13</time>
+              <time title="创建时间：2026-10-12 23:17:31" itemprop="dateCreated datePublished" datetime="2026-10-12T23:17:31+08:00">2026-10-12</time>
             </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2022-11-10 15:32:51" itemprop="dateModified" datetime="2022-11-10T15:32:51+08:00">2022-11-10</time>
+              </span>
 
           
 
@@ -187,52 +193,22 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <p><strong>1.HDFS主从架构</strong></p>
-<p>角色:<br>namenode  名称节点 nn<br>a.文件名称<br>b.文件的目录结构<br>c.文件的属性 权限 创建时间 副本数<br>d.一个文件被对应切割哪些数据块 副本数的块  9块</p>
-<p>===》数据块对应分布在哪些节点上</p>
-<p><strong>blockmap 块映射  当然nn节点是不会持久化存储这种映射关系<br>是通过集群的启动和运行时，dn定期发送blockreport给nn，然后<br>nn就在内存中动态维护这种映射关系</strong></p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@data001 ~]$ hdfs dfs -ls  /wordcount2/input/</span><br><span class="line">20/05/10 20:12:38 WARN util.NativeCodeLoader: Unable to load native-hadoop </span><br><span class="line">library for your platform... using builtin-java classes where applicable</span><br><span class="line">Found 2 items</span><br><span class="line">-rw-r--r--   1 hadoop supergroup     35     2020-05-09 21:34 /wordcount2/input/1.log</span><br><span class="line">-rw-r--r--   1 hadoop supergroup     29     2020-05-09 21:34 /wordcount2/input/2.log</span><br><span class="line">[hadoop@data001 ~]$ </span><br></pre></td></tr></table></figure>
+          <p>文件处理.md</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line">上传:</span><br><span class="line">-bash-4.2$ hdfs dfs -<span class="built_in">mkdir</span> /blockrecover</span><br><span class="line">-bash-4.2$ <span class="built_in">echo</span> <span class="string">&quot;www.data.com&quot;</span> &gt; ruozedata.md</span><br><span class="line"></span><br><span class="line">-bash-4.2$ hdfs dfs -put data.md /blockrecover</span><br><span class="line">-bash-4.2$ hdfs dfs -<span class="built_in">ls</span> /blockrecover</span><br><span class="line"></span><br><span class="line">Found 1 items</span><br><span class="line"></span><br><span class="line">-rw-r--r--   3 hdfs supergroup         18 2019-03-03 14:42 /blockrecover/ruozedata.md</span><br><span class="line">-bash-4.2$ </span><br><span class="line"></span><br><span class="line">校验: 健康状态</span><br><span class="line">-bash-4.2$ hdfs fsck /</span><br><span class="line">Connecting to namenode via http://yws76:50070/fsck?ugi=hdfs&amp;path=%2F</span><br><span class="line">FSCK started by hdfs (auth:SIMPLE) from /192.168.0.76 <span class="keyword">for</span> path / at Sun Mar 03 14:44:44 CST 2019</span><br><span class="line">...............................................................................Status: HEALTHY</span><br><span class="line"> Total size:    50194618424 B</span><br><span class="line"> Total <span class="built_in">dirs</span>:    354</span><br><span class="line"> Total files:   1079</span><br><span class="line"> Total symlinks:                0</span><br><span class="line"> Total blocks (validated):      992 (avg. block size 50599413 B)</span><br><span class="line"> Minimally replicated blocks:   992 (100.0 %)</span><br><span class="line"> Over-replicated blocks:        0 (0.0 %)</span><br><span class="line"> Under-replicated blocks:       0 (0.0 %)</span><br><span class="line"> Mis-replicated blocks:         0 (0.0 %)</span><br><span class="line"> Default replication <span class="built_in">factor</span>:    3</span><br><span class="line"> Average block replication:     3.0</span><br><span class="line"> Corrupt blocks:                0</span><br><span class="line"> Missing replicas:              0 (0.0 %)</span><br><span class="line"> Number of data-nodes:          3</span><br><span class="line"> Number of racks:               1</span><br><span class="line"> FSCK ended at Sun Mar 03 14:44:45 CST 2019 <span class="keyword">in</span> 76 milliseconds</span><br><span class="line"></span><br><span class="line"> The filesystem under path <span class="string">&#x27;/&#x27;</span> is HEALTHY</span><br><span class="line"> -bash-4.2$</span><br></pre></td></tr></table></figure>
 
-
-<p>作用:</p>
-<h5 id="文件系统的命名空间-其实就是维护文件系统树的文件和文件夹"><a href="#文件系统的命名空间-其实就是维护文件系统树的文件和文件夹" class="headerlink" title="文件系统的命名空间  其实就是维护文件系统树的文件和文件夹"></a>文件系统的命名空间  其实就是维护文件系统树的文件和文件夹</h5><h5 id="这些形式是以两种文件来永久的保存在本地磁盘的"><a href="#这些形式是以两种文件来永久的保存在本地磁盘的" class="headerlink" title="这些形式是以两种文件来永久的保存在本地磁盘的"></a>这些形式是以两种文件来永久的保存在本地磁盘的</h5><h5 id="镜像文件-fsimage"><a href="#镜像文件-fsimage" class="headerlink" title="镜像文件 fsimage"></a>镜像文件 fsimage</h5><h5 id="编辑日志文件-editlogs"><a href="#编辑日志文件-editlogs" class="headerlink" title="编辑日志文件 editlogs"></a>编辑日志文件 editlogs</h5><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@data001 current]$ pwd</span><br><span class="line">/home/hadoop/tmp/dfs/name/current</span><br><span class="line">[hadoop@data001 current]$ ll</span><br><span class="line">edits_0000000000000000375-0000000000000000376</span><br><span class="line">edits_0000000000000000377-0000000000000000378</span><br><span class="line">edits_0000000000000000379-0000000000000000380</span><br><span class="line">edits_0000000000000000381-0000000000000000382</span><br><span class="line">edits_0000000000000000383-0000000000000000384</span><br><span class="line">edits_0000000000000000385-0000000000000000386</span><br><span class="line">edits_inprogress_0000000000000000387</span><br><span class="line">fsimage_0000000000000000384</span><br><span class="line">fsimage_0000000000000000384.md5</span><br><span class="line">fsimage_0000000000000000386</span><br><span class="line">fsimage_0000000000000000386.md5</span><br></pre></td></tr></table></figure>
-
-<p>secondary namenode  第二名称节点  snn</p>
-<p>a.fsimage editlog定期拿过来合并 备份 推送</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@data001 current]$ pwd</span><br><span class="line">/home/hadoop/tmp/dfs/namesecondary/current</span><br><span class="line">[hadoop@data001 current]$ </span><br><span class="line">edits_0000000000000000377-0000000000000000378</span><br><span class="line">edits_0000000000000000379-0000000000000000380</span><br><span class="line">edits_0000000000000000381-0000000000000000382</span><br><span class="line">edits_0000000000000000383-0000000000000000384</span><br><span class="line">edits_0000000000000000385-0000000000000000386</span><br><span class="line">fsimage_0000000000000000384</span><br><span class="line">fsimage_0000000000000000384.md5</span><br><span class="line">fsimage_0000000000000000386</span><br><span class="line">fsimage_0000000000000000386.md5</span><br></pre></td></tr></table></figure>
-
-<p>fsimage_0000000000000000384<br>snn将老大的edits_0000000000000000385-0000000000000000386<br>检查点动作checkpoint合并为fsimage_0000000000000000386将这个<br>386文件推送给老大，那么新的数据写读的记录就存放在<br>edits_inprogress_0000000000000000387 日志文件是变化的追加</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">dfs.namenode.checkpoint.period  3600s </span><br><span class="line">dfs.namenode.checkpoint.txns    1000000 </span><br></pre></td></tr></table></figure>
-<p>为了解决单点故障，nn只有一个对外的，后来新增一个snn，1小时的备份<br>虽然能够减轻单点故障带来的丢失风险，但是在生产上还是不允许使用snn<br>11:00  snn 备份<br>11:30  数据一直写到这  突然nn节点 磁盘故障 无法恢复<br>拿snn的最新的一个fsimage文件恢复，那么只能恢复 11点的数据<br>在生产上是 不用snn，是启动另外一个NN进程(实时备份，实时准备替换nn，<br>变为活动的nn)叫做HDFS HA</p>
-<p><strong>datanode  数据节点  dn</strong></p>
-<p>a.存储数据块和数据块的校验和</p>
-<p>作用:<br>a.每隔3s发送心跳给nn,告诉 我还活着</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">dfs.heartbeat.interval  3s</span><br></pre></td></tr></table></figure>
-<p>b.每隔一定的时间发生一次blockreport</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">dfs.blockreport.intervalMsec   21600000ms=6小时</span><br><span class="line">dfs.datanode.directoryscan.interval  21600s=6小时</span><br></pre></td></tr></table></figure>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@data001 subdir0]$ pwd</span><br><span class="line">/home/hadoop/tmp/dfs/data/current/BP-672629417-192.168.0.3-1588775739687/currentdir0]$ </span><br></pre></td></tr></table></figure>
-
-
-<p><strong>2.HDFS写流程</strong></p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@data001 ~]$ echo &#x27;data&#x27; &gt;1.log</span><br><span class="line">[hadoop@data001 ~]$ </span><br><span class="line">[hadoop@data001 ~]$ hdfs dfs -put 1.log  /</span><br><span class="line">20/05/10 21:19:54 WARN util.NativeCodeLoader: Unable to load native-hadoop </span><br><span class="line">library for your platform... using builtin-java classes where applicable</span><br><span class="line">[hadoop@data001 ~]$ </span><br></pre></td></tr></table></figure>
-
-<p><img src="/images/hdfsarchitecture.jpg" alt="HDFS"></p>
-<h3 id="对用户操作是无感知的"><a href="#对用户操作是无感知的" class="headerlink" title="对用户操作是无感知的"></a>对用户操作是无感知的</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">1.HDFS Client调用FileSystem.create(filePath)方法，去和NN进行【RPC】通信！</span><br><span class="line">NN 会去check这个路径的文件是否已经存在，是否有权限能够创建这个文件！</span><br><span class="line">假如都ok，就去创建一个新的文件，但是这时还没写数据，是不关联任何的block。</span><br><span class="line">nn根据上传的文件大小，根据块大小+副本数参数，</span><br><span class="line">计算要上传多少块和块存储在DN的位置。最终将这些信息返回给客户端，</span><br><span class="line">为【FSDataOutputStream】对象</span><br><span class="line"></span><br><span class="line">2.Client调用【FSDataOutputStream】对象的write方法，</span><br><span class="line">将第一个块的第一个副本数写第一个DN节点，</span><br><span class="line">写完去第二个副本写DN2；写完去第三个副本写DN3。当第三个副本写完，</span><br><span class="line">就返回一个ack packet确定包给DN2节点，</span><br><span class="line">当DN2节点收到这个ack packet确定包加上自己也是写完了，就返回一个</span><br><span class="line">ack packet确定包给第一个DN1节点，当DN1节点收到这个ack packet确定包</span><br><span class="line">加上自己也是写完了，将ack packet确定包返回给【FSDataOutputStream】</span><br><span class="line">对象，就标识第一个块的三个副本写完。其他块以此类推！</span><br><span class="line"></span><br><span class="line">3.当所有的块全部写完， client调用 【FSDataOutputStream】对象的close方法，</span><br><span class="line">关闭输出流。再次调用FileSystem.complete方法，告诉nn文件写成功!</span><br><span class="line">伪分布式 1台dn  副本数参数必然是设置1</span><br><span class="line">dn挂了，肯定不能写入</span><br></pre></td></tr></table></figure>
-
-
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">生产分布式 3台dn  副本数参数必然是设置3</span><br><span class="line">dn挂了，肯定不能写入</span><br><span class="line"></span><br><span class="line">生产分布式 &gt;3台dn  副本数参数必然是设置3</span><br><span class="line">dn挂了，能写入</span><br><span class="line"></span><br><span class="line">存活的alive dn节点数&gt;=副本数 就能写成功</span><br></pre></td></tr></table></figure>
-
-<p><strong>3.HDFS读流程</strong></p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@data001 ~]$ hdfs dfs -cat  /1.log</span><br><span class="line">20/05/10 21:53:19 WARN util.NativeCodeLoader: Unable to load </span><br><span class="line">native-hadoop library for your platform... using builtin-java </span><br><span class="line">classes where applicable data</span><br><span class="line">[hadoop@data001 ~]$ </span><br></pre></td></tr></table></figure>
-
-<p>对用户操作是无感知的 </p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">1.Client调用FileSystem的open(filePath),</span><br><span class="line">与NN进行RPC通信，返回该文件的部分或者全部的block列表</span><br><span class="line">也就是返回【FSDataInputStream】对象</span><br><span class="line"></span><br><span class="line">2.Client调用【FSDataInputStream】对象的read方法</span><br><span class="line">去与第一个块的最近的DN进行读取，读取完成后，会check，假如ok，就关闭与DN通信。</span><br><span class="line">假如读取失败，会记录DN+block信息，下次就不会从这个节点读取。那么就从第二个节点读取。</span><br><span class="line"></span><br><span class="line">然后去与第二个块的最近的DN进行读取，以此类推。</span><br><span class="line"></span><br><span class="line">假如当block列表全部读取完成，文件还没读取结束，就调用FileSystem从nn获取下一批次</span><br><span class="line">的block列表。</span><br><span class="line"></span><br><span class="line">3.Client调用【FSDataInputStream】对象close方法，关闭输入流。</span><br></pre></td></tr></table></figure>
-
-<p><strong>4.HDFS副本放置策略</strong></p>
-<p><img src="/images/HDFS%E5%89%AF%E6%9C%AC%E6%94%BE%E7%BD%AE%E7%AD%96%E7%95%A5.jpg" alt="HDFS"></p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">机架 rack1 5   rack2 5</span><br><span class="line">生产上读写操作 尽量选择 某个DN节点</span><br><span class="line">第一个副本：</span><br><span class="line">放置在上传的DN节点；</span><br><span class="line">假如是非DN节点，就随机挑选一个磁盘不太慢，cpu不太忙的节点；</span><br><span class="line">第二个副本：</span><br><span class="line">放置在第一个副本不同的机架上的某个DN节点。</span><br><span class="line">第三个副本:</span><br><span class="line">与第二个副本相同机架的不同节点上。</span><br><span class="line">如果副本数设置更多，就随机放。</span><br></pre></td></tr></table></figure>
-
-
+<p>直接DN节点上删除文件一个block的一个副本(3副本) 删除块和meta文件:<br>[root@yws87 subdir135]# rm -rf blk_1075808214 blk_1075808214_2068515.meta<br>直接重启HDFS，直接模拟损坏效果，然后fsck检查:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">-bash-4.2$ hdfs fsck /</span><br><span class="line">Connecting to namenode via http://yws77:50070/fsck?ugi=hdfs&amp;path=%2F</span><br><span class="line">FSCK started by hdfs (auth:SIMPLE) from /192.168.0.76 <span class="keyword">for</span> path / at Sun Mar 03 16:02:04 CST 2019</span><br><span class="line">.</span><br><span class="line">/blockrecover/ruozedata.md:  Under replicated BP-1513979236-192.168.0.76-1514982530341:blk_1075808214_2068515. Target Replicas is 3 but found 2 live replica(s), 0 decommissioned replica(s), 0 decommissioning replica(s).</span><br><span class="line">...............................................................................Status: HEALTHY</span><br><span class="line"> Total size:    50194618424 B</span><br><span class="line"> Total <span class="built_in">dirs</span>:    354</span><br><span class="line"> Total files:   1079</span><br><span class="line"> Total symlinks:                0</span><br><span class="line"> Total blocks (validated):      992 (avg. block size 50599413 B)</span><br><span class="line"> Minimally replicated blocks:   992 (100.0 %)</span><br><span class="line"> Over-replicated blocks:        0 (0.0 %)</span><br><span class="line"> Under-replicated blocks:       1 (0.10080645 %)</span><br><span class="line"> Mis-replicated blocks:         0 (0.0 %)</span><br><span class="line"> Default replication <span class="built_in">factor</span>:    3</span><br><span class="line"> Average block replication:     2.998992</span><br><span class="line"> Corrupt blocks:                0</span><br><span class="line"> Missing replicas:              1 (0.033602152 %)</span><br><span class="line"> Number of data-nodes:          3</span><br><span class="line"> Number of racks:               1</span><br><span class="line"> </span><br><span class="line"> FSCK ended at Sun Mar 03 16:02:04 CST 2019 <span class="keyword">in</span> 148 milliseconds</span><br><span class="line"> The filesystem under path <span class="string">&#x27;/&#x27;</span> is HEALTHY</span><br><span class="line"> -bash-4.2$</span><br></pre></td></tr></table></figure>
+<h4 id="手动修复hdfs-debug"><a href="#手动修复hdfs-debug" class="headerlink" title="手动修复hdfs debug"></a>手动修复hdfs debug</h4><p>-bash-4.2$ hdfs |grep debug<br>没有输出debug参数的任何信息结果！<br>故hdfs命令帮助是没有debug的，但是确实有hdfs debug这个组合命令，切记。</p>
+<p>修复命令:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">-bash-4.2$ hdfs debug  recoverLease  -path /blockrecover/ruozedata.md -retries 10</span><br><span class="line">recoverLease SUCCEEDED on /blockrecover/ruozedata.md</span><br><span class="line">-bash-4.2$ </span><br><span class="line"></span><br><span class="line">直接DN节点查看，block文件和meta文件恢复:</span><br><span class="line">[root@yws87 subdir135]<span class="comment"># ll</span></span><br><span class="line">total 8</span><br><span class="line">-rw-r--r-- 1 hdfs hdfs 56 Mar  3 14:28 blk_1075808202</span><br><span class="line">-rw-r--r-- 1 hdfs hdfs 11 Mar  3 14:28 blk_1075808202_2068503.meta</span><br><span class="line">[root@yws87 subdir135]<span class="comment"># ll</span></span><br><span class="line">total 24</span><br><span class="line">-rw-r--r-- 1 hdfs hdfs 56 Mar  3 14:28 blk_1075808202</span><br><span class="line">-rw-r--r-- 1 hdfs hdfs 11 Mar  3 14:28 blk_1075808202_2068503.meta</span><br><span class="line">-rw-r--r-- 1 hdfs hdfs 18 Mar  3 15:23 blk_1075808214</span><br><span class="line">-rw-r--r-- 1 hdfs hdfs 11 Mar  3 15:23 blk_1075808214_2068515.meta</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<h4 id="自动修复"><a href="#自动修复" class="headerlink" title="自动修复"></a>自动修复</h4><p>当数据块损坏后，DN节点执行directoryscan操作之前，都不会发现损坏；<br>也就是directoryscan操作是间隔6h<br>dfs.datanode.directoryscan.interval : 21600</p>
+<p>在DN向NN进行blockreport前，都不会恢复数据块;<br>也就是blockreport操作是间隔6h<br>dfs.blockreport.intervalMsec : 21600000</p>
+<p>当NN收到blockreport才会进行恢复操作。<br>具体参考生产上HDFS（CDH5.12.0）对应的版本的文档参数:</p>
+<p><a target="_blank" rel="noopener" href="http://archive.cloudera.com/cdh5/cdh/5/hadoop-2.6.0-cdh5.12.0/hadoop-project-dist/hadoop-hdfs/hdfs-default.xml">http://archive.cloudera.com/cdh5/cdh/5/hadoop-2.6.0-cdh5.12.0/hadoop-project-dist/hadoop-hdfs/hdfs-default.xml</a></p>
+<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><p>生产上本人一般倾向于使用 手动修复方式，但是前提要手动删除损坏的block块。</p>
+<p>切记，是删除损坏block文件和meta文件，而不是删除hdfs文件。</p>
+<p>当然还可以先把文件get下载，然后hdfs删除，再对应上传。</p>
+<p>切记删除不要执行: hdfs fsck / -delete 这是删除损坏的文件， 那么数据不就丢了嘛；除非无所谓丢数据，或者有信心从其他地方可以补数据到hdfs！</p>
 
       
     </div>
@@ -252,7 +228,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2022/11/13/Linux%E6%93%8D%E4%BD%9C%E6%8C%87%E4%BB%A4%E4%B8%89/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2026/10/12/Linux%E6%93%8D%E4%BD%9C%E6%8C%87%E4%BB%A4%E4%BA%8C/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -266,7 +242,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/2022/11/13/Linux%E6%93%8D%E4%BD%9C%E6%8C%87%E4%BB%A4%E4%B8%89/" class="post-title-link" itemprop="url">Linux操作指令三</a>
+            <a href="/2026/10/12/Linux%E6%93%8D%E4%BD%9C%E6%8C%87%E4%BB%A4%E4%BA%8C/" class="post-title-link" itemprop="url">Linux操作指令二</a>
         </h2>
 
         <div class="post-meta">
@@ -275,127 +251,16 @@
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">发表于</span>
-              
 
-              <time title="创建时间：2022-11-13 14:07:07 / 修改时间：14:25:27" itemprop="dateCreated datePublished" datetime="2022-11-13T14:07:07+08:00">2022-11-13</time>
+              <time title="创建时间：2026-10-12 23:17:31" itemprop="dateCreated datePublished" datetime="2026-10-12T23:17:31+08:00">2026-10-12</time>
             </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p><strong>Part3主要是是生产上常用的常用的一些指令</strong></p>
-<p><strong>1.系统常用检查命令</strong></p>
-<p>磁盘 df -h<br>内存 free -m<br>负载 top</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">[root@redhat001 ~]$ free -m </span><br><span class="line">              total        used        free      shared  buff/cache   available</span><br><span class="line">Mem:           7823         222        6229         257        1371        7096</span><br><span class="line">Swap:             0           0           0</span><br></pre></td></tr></table></figure>
-
-<p>大数据 生产服务器 swap是设置0  10也可以</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">[root@redhat001 ~]$ df -h</span><br><span class="line">Filesystem      Size  Used Avail Use% Mounted on</span><br><span class="line">/dev/vda1        40G   16G   25G  39% /</span><br><span class="line"></span><br><span class="line">/dev/vdb1        2T   16G   25G  1% /data01</span><br><span class="line">/dev/vdb2        2T   16G   25G  1% /data02</span><br><span class="line">/dev/vdb3        2T   16G   25G  1% /data03</span><br><span class="line">/dev/vdb4        2T   16G   25G  1% /data04</span><br><span class="line"></span><br><span class="line">500G ssd</span><br><span class="line"></span><br><span class="line">不要</span><br><span class="line">devtmpfs        3.9G     0  3.9G   0% /dev</span><br><span class="line">tmpfs           3.9G   16K  3.9G   1% /dev/shm</span><br><span class="line">tmpfs           3.9G  258M  3.6G   7% /run</span><br><span class="line">tmpfs           3.9G     0  3.9G   0% /sys/fs/cgroup</span><br><span class="line">tmpfs           783M     0  783M   0% /run/user/1004</span><br><span class="line">[root@redhat001 ~]$ </span><br></pre></td></tr></table></figure>
-
-<p>系统负载<br>load average: 0.01, 0.03, 0.05<br>          1min   5min  15min</p>
-<p>经验值: 10  生产不用超过这个 ，否则认为服务器就是卡<br>a.是你的程序有问题 在大量跑计算<br>b.是不是被挖矿 yarn redis 最容易被hacker 攻击<br>c.硬件问题  内存条 硬盘   重启 </p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">top - 21:20:22 up 7 days, 58 min,  1 user,  load average: 0.01, 0.03, 0.05</span><br><span class="line">Tasks:  89 total,   1 running,  88 sleeping,   0 stopped,   0 zombie</span><br><span class="line">%Cpu(s):  0.2 us,  0.5 sy,  0.0 ni, 99.0 id,  0.0 wa,  0.0 hi,  0.0 si,  0.3 st</span><br><span class="line">KiB Mem :  8011076 total,  6377388 free,   229060 used,  1404628 buff/cache</span><br><span class="line">KiB Swap:        0 total,        0 free,        0 used.  7265724 avail Mem </span><br><span class="line"></span><br><span class="line">  PID USER      PR  NI    VIRT    RES    SHR S  %CPU %MEM     TIME+ COMMAND                                  </span><br><span class="line"> 2374 root      20   0  394348  31376   8608 S   0.3  0.4  41:44.99 jdog-kunlunmirr                          </span><br><span class="line">    1 root      20   0  125356   3796   2508 S   0.0  0.0   1:22.32 systemd                                  </span><br><span class="line">    2 root      20   0       0      0      0 S   0.0  0.0   0:00.00 kthreadd                                 </span><br><span class="line">    3 root      20   0       0      0      0 S   0.0  0.0   0:00.08 ksoftirqd/0                              </span><br><span class="line">    5 root       0 -20       0      0      0 S   0.0  0.0   0:00.00 kworker/0:0H                             </span><br><span class="line">    6 root      20   0       0      0      0 S   0.0  0.0   0:02.50 kworker/u4:0</span><br></pre></td></tr></table></figure>
-<p><strong>2.yum安装</strong></p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">yum search httpd</span><br><span class="line">yum install httpd</span><br></pre></td></tr></table></figure>
-<p>centos6:<br>service httpd status|start|stop  1个应用httpd<br>centos7:<br>service httpd status|start|stop  兼容<br>systemctl status|start|stop httpd app2 app3 app4  一次性操作多个应用</p>
-<p>搜索 卸载:</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">[root@redhat001 ~]# rpm -qa|grep http</span><br><span class="line">httpd-2.4.6-90.el7.centos.x86_64</span><br><span class="line">httpd-tools-2.4.6-90.el7.centos.x86_64</span><br><span class="line">[root@redhat001 ~]# rpm -e 包名称 --nodeps</span><br><span class="line">[root@redhat001 ~]# yum remove httpd-2.4.6-90.el7.centos.x86_64</span><br></pre></td></tr></table></figure>
-
-<p><strong>3.进程 端口号</strong></p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">ps -ef | grep http</span><br><span class="line">kill -9 16629</span><br><span class="line">kill -9 16630 16631  16632  16633  16634</span><br></pre></td></tr></table></figure>
-
-<p>根据匹配字段 搜索所有符合的进程 全部杀死<br>但是: 生产慎用 除非你先ps查看 这个关键词搜索的进程 是不是都是你想要杀死的进程<br>保不齐有个其他服务的进程 会造成误杀 生产事故！！！</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">[root@redhat001 ~]# ps -ef|grep http</span><br><span class="line">root     18363     1  0 21:51 ?        00:00:00 /usr/sbin/httpd -DFOREGROUND</span><br><span class="line">apache   18364 18363  0 21:51 ?        00:00:00 /usr/sbin/httpd -DFOREGROUND</span><br><span class="line">apache   18365 18363  0 21:51 ?        00:00:00 /usr/sbin/httpd -DFOREGROUND</span><br><span class="line">apache   18366 18363  0 21:51 ?        00:00:00 /usr/sbin/httpd -DFOREGROUND</span><br><span class="line">apache   18367 18363  0 21:51 ?        00:00:00 /usr/sbin/httpd -DFOREGROUND</span><br><span class="line">apache   18368 18363  0 21:51 ?        00:00:00 /usr/sbin/httpd -DFOREGROUND</span><br><span class="line">root     18387 15881  0 21:51 pts/2    00:00:00 grep --color=auto http</span><br><span class="line">[root@redhat001 ~]# kill -9 $(pgrep -f httpd)</span><br><span class="line">[root@redhat001 ~]# </span><br><span class="line">[root@redhat001 ~]# </span><br><span class="line">[root@redhat001 ~]# ps -ef|grep http</span><br><span class="line">root     18444 15881  0 21:52 pts/2    00:00:00 grep --color=auto http</span><br><span class="line">[root@redhat001 ~]# </span><br></pre></td></tr></table></figure>
-
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">[root@redhat001 ~]# ps -ef|grep http</span><br><span class="line">root     18670     1  0 21:53 ?        00:00:00 /usr/sbin/httpd -DFOREGROUND</span><br><span class="line">apache   18671 18670  0 21:53 ?        00:00:00 /usr/sbin/httpd -DFOREGROUND</span><br><span class="line">apache   18672 18670  0 21:53 ?        00:00:00 /usr/sbin/httpd -DFOREGROUND</span><br><span class="line">apache   18673 18670  0 21:53 ?        00:00:00 /usr/sbin/httpd -DFOREGROUND</span><br><span class="line">apache   18674 18670  0 21:53 ?        00:00:00 /usr/sbin/httpd -DFOREGROUND</span><br><span class="line">apache   18675 18670  0 21:53 ?        00:00:00 /usr/sbin/httpd -DFOREGROUND</span><br><span class="line">root     18696 15881  0 21:54 pts/2    00:00:00 grep --color=auto http</span><br></pre></td></tr></table></figure>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">[root@redhat001 ~]# yum install -y net-tools.x86_64</span><br><span class="line">[root@redhat001 ~]# netstat -nlp| grep 18670</span><br><span class="line">tcp6       0      0 :::80                   :::*                    LISTEN      18670/httpd         </span><br><span class="line">[root@redhat001 ~]# </span><br><span class="line">[root@redhat001 ~]# </span><br><span class="line">[root@redhat001 ~]# </span><br><span class="line">[root@redhat001 ~]# netstat -nlp| grep 18671</span><br><span class="line">[root@redhat001 ~]# netstat -nlp| grep 18672</span><br><span class="line">[root@redhat001 ~]# netstat -nlp| grep 18673</span><br><span class="line">[root@redhat001 ~]# </span><br></pre></td></tr></table></figure>
-
-<p>进程不一定都会起到端口号<br>但是  与其他服务通信 比如需要端口号！！！</p>
-<p>eg:去打开xxx服务器的应用yyy的网页？你会涉及到哪些Linux命令<br>ip<br>ps -ef|grep yyy –》pid<br>netstat -nlp|grep pid –》port</p>
-<p>浏览器: <a href="http://ip:port">http://ip:port</a></p>
-<p>细节:</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">[root@redhat001 ~]# netstat -nlp| grep 18670</span><br><span class="line">tcp6       0      0 :::80                   :::*                    LISTEN      18670/httpd         </span><br><span class="line">tcp6       0      0 0.0.0.0:80                   :::*                    LISTEN      18670/httpd         </span><br><span class="line">tcp6       0      0 192.168.0.3:80                   :::*                    LISTEN      18670/httpd         </span><br><span class="line"></span><br><span class="line"></span><br><span class="line">tcp6       0      0 127.0.0.1:80                   :::*                    LISTEN      18670/httpd         </span><br><span class="line">tcp6       0      0 localhost:80                   :::*                    LISTEN      18670/httpd         </span><br><span class="line">危险: 该服务只能自己服务器的里面自己访问自己  </span><br></pre></td></tr></table></figure>
-
-<p>ping   ip<br>telnet ip port</p>
-<p>window cmd：<br>ping 114.67.101.143<br>telnet 114.67.101.143 80</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">Linux：</span><br><span class="line">[root@redhat001 ~]# telnet redhat001 80</span><br><span class="line">Trying 192.168.0.3...</span><br><span class="line">Connected to redhat001.</span><br><span class="line">Escape character is &#x27;^]&#x27;.</span><br><span class="line">^Z</span><br><span class="line">Connection closed by foreign host.</span><br><span class="line">[root@redhat001 ~]# </span><br><span class="line">[root@redhat001 ~]# </span><br><span class="line">[root@redhat001 ~]# </span><br><span class="line">[root@redhat001 ~]# </span><br><span class="line">[root@redhat001 ~]# telnet redhat001 809</span><br><span class="line">Trying 192.168.0.3...</span><br><span class="line">telnet: connect to address 192.168.0.3: Connection refused</span><br><span class="line">[root@redhat001 ~]# </span><br></pre></td></tr></table></figure>
-
-<p>有可能你的服务器 防火墙 开启，云主机 需要开启 安全组策略<br>直接找Linux运维 网络工程师 加防火墙(硬件)策略  </p>
-<p>总结:<br>Connection refused<br>1.ping   ip 因为服务器是ping功能禁止<br>2.telnet ip  port  ok</p>
-<p>配置企业级别yum源 取代互联网的repo文件的URL</p>
-<p>物理隔绝</p>
-<p><strong>4.下载</strong></p>
-<p>wget <a target="_blank" rel="noopener" href="https://repo1.maven.org/maven2/org/apache/spark/spark-core_2.12/2.4.5/spark-core_2.12-2.4.5.jar">https://repo1.maven.org/maven2/org/apache/spark/spark-core_2.12/2.4.5/spark-core_2.12-2.4.5.jar</a><br>curl <a target="_blank" rel="noopener" href="https://repo1.maven.org/maven2/org/apache/spark/spark-core_2.12/2.4.5/spark-core_2.12-2.4.5.jar">https://repo1.maven.org/maven2/org/apache/spark/spark-core_2.12/2.4.5/spark-core_2.12-2.4.5.jar</a> -O  spark-core_2.12-2.4.5.jar</p>
-<p><strong>5.压缩 解压</strong></p>
-<p>zip -r xxx.zip xxx/*<br>unzip xxx.zip</p>
-<p>tar -czvf xxxx.tar.gz  xxxx/*<br>tar -xzvf xxxx.tar.gz</p>
-<p>Examples:<br>  tar -cf archive.tar foo bar  # Create archive.tar from files foo and bar.<br>  tar -tvf archive.tar         # List all files in archive.tar verbosely.<br>  tar -xf archive.tar          # Extract all files from archive.tar.</p>
-<p><strong>6.命令找不到</strong></p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">[root@redhat001 ~]# </span><br><span class="line">[root@redhat001 ~]# </span><br><span class="line">[root@redhat001 ~]# ls</span><br><span class="line">dir1  dir1.tar.gz</span><br><span class="line">[root@redhat001 ~]# which ls</span><br><span class="line">alias ls=&#x27;ls --color=auto&#x27;</span><br><span class="line">        /usr/bin/ls</span><br><span class="line">[root@redhat001 ~]# which jjj</span><br><span class="line">/usr/bin/which: no jjj in (/home/dwz/app/python3/bin:/usr/java/jdk1.8.0_181/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin)</span><br><span class="line">[root@redhat001 ~]# </span><br></pre></td></tr></table></figure>
-<p>想要命令快速找到  which xxx 来验证，其实就是提前将命令的目录配置在环境变量$PATH<br>echo $PATH 来查看是否将命令的目录配置上！</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">[root@redhat001 ~]# echo $PATH</span><br><span class="line">/home/dwz/app/python3/bin:/usr/java/jdk1.8.0_181/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin</span><br><span class="line">[root@redhat001 ~]# jjj</span><br><span class="line">-bash: jjj: command not found</span><br><span class="line">[root@redhat001 ~]# </span><br></pre></td></tr></table></figure>
-<p> command not found<br> a.没安装上<br> b.路径没配置</p>
-<p> <strong>7.定时</strong> </p>
-<p> 脚本:<br> <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[root@redhat001 ~]# </span><br><span class="line">[root@redhat001 ~]# vi ruoze.sh</span><br></pre></td></tr></table></figure></p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line">#!/bin/bash</span><br><span class="line">date</span><br><span class="line">[root@redhat001 ~]# </span><br><span class="line">[root@redhat001 ~]# </span><br><span class="line">[root@redhat001 ~]# ll</span><br><span class="line">total 8</span><br><span class="line">drwxr-xr-x 2 root root  30 Apr 22 22:50 dir1</span><br><span class="line">-rw-r--r-- 1 root root 128 Apr 22 22:49 dir1.tar.gz</span><br><span class="line">-rw-r--r-- 1 root root  19 Apr 22 23:02 ruoze.sh</span><br><span class="line">[root@redhat001 ~]# ./ruoze.sh</span><br><span class="line">-bash: ./ruoze.sh: Permission denied</span><br><span class="line">[root@redhat001 ~]# sh ./ruoze.sh</span><br><span class="line">Wed Apr 22 23:02:36 CST 2020</span><br><span class="line">[root@redhat001 ~]# chmod 744 ruoze.sh</span><br><span class="line">[root@redhat001 ~]# ll</span><br><span class="line">total 8</span><br><span class="line">drwxr-xr-x 2 root root  30 Apr 22 22:50 dir1</span><br><span class="line">-rw-r--r-- 1 root root 128 Apr 22 22:49 dir1.tar.gz</span><br><span class="line">-rwxr--r-- 1 root root  19 Apr 22 23:02 ruoze.sh</span><br><span class="line">[root@redhat001 ~]# ./ruoze.sh </span><br><span class="line">Wed Apr 22 23:03:17 CST 2020</span><br><span class="line">[root@redhat001 ~]# </span><br><span class="line">[root@redhat001 ~]# </span><br><span class="line">[root@redhat001 ~]# date</span><br><span class="line">Wed Apr 22 23:03:21 CST 2020</span><br><span class="line"></span><br><span class="line">[root@redhat001 ~]# crontab -e</span><br><span class="line">* * * * * /root/ruoze.sh &gt;&gt; /root/ruoze.log</span><br></pre></td></tr></table></figure>
-<p>分<br>小时<br>日<br>月<br>周</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">* 表示 每**</span><br><span class="line">*/6 * * * * 每6分钟</span><br></pre></td></tr></table></figure>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">[root@redhat001 ~]# vi ruoze2.sh</span><br><span class="line">#!/bin/bash</span><br><span class="line">for((i=1;i&lt;=6;i++));</span><br><span class="line">do</span><br><span class="line">	date</span><br><span class="line">	sleep 10s</span><br><span class="line">done</span><br><span class="line">[root@redhat001 ~]# chmod +x ruoze2.sh</span><br></pre></td></tr></table></figure>
-<p><strong>7.后台执行脚本</strong></p>
-<p>nohup  /root/ruoze.sh &gt;&gt; /root/ruoze.log 2&gt;&amp;1 &amp;  生产标准写法</p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2022/11/13/Linux%E6%93%8D%E4%BD%9C%E6%8C%87%E4%BB%A4%E4%BA%8C/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="zhawp">
-      <meta itemprop="description" content="SHARINGBLOG">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="holosxy.github.io">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2022/11/13/Linux%E6%93%8D%E4%BD%9C%E6%8C%87%E4%BB%A4%E4%BA%8C/" class="post-title-link" itemprop="url">Linux操作指令二</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2022-11-13 14:10:01" itemprop="dateModified" datetime="2022-11-13T14:10:01+08:00">2022-11-13</time>
               </span>
-              <span class="post-meta-item-text">发表于</span>
-              
-
-              <time title="创建时间：2022-11-13 14:07:07 / 修改时间：14:10:01" itemprop="dateCreated datePublished" datetime="2022-11-13T14:07:07+08:00">2022-11-13</time>
-            </span>
 
           
 
@@ -496,7 +361,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2022/11/13/Linux%E6%93%8D%E4%BD%9C%E6%8C%87%E4%BB%A4%E4%B8%80/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2026/10/12/Linux%E6%93%8D%E4%BD%9C%E6%8C%87%E4%BB%A4%E4%B8%89/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -510,7 +375,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/2022/11/13/Linux%E6%93%8D%E4%BD%9C%E6%8C%87%E4%BB%A4%E4%B8%80/" class="post-title-link" itemprop="url">Linux操作指令一</a>
+            <a href="/2026/10/12/Linux%E6%93%8D%E4%BD%9C%E6%8C%87%E4%BB%A4%E4%B8%89/" class="post-title-link" itemprop="url">Linux操作指令三</a>
         </h2>
 
         <div class="post-meta">
@@ -519,10 +384,139 @@
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">发表于</span>
-              
 
-              <time title="创建时间：2022-11-13 14:07:06 / 修改时间：14:09:01" itemprop="dateCreated datePublished" datetime="2022-11-13T14:07:06+08:00">2022-11-13</time>
+              <time title="创建时间：2026-10-12 23:17:31" itemprop="dateCreated datePublished" datetime="2026-10-12T23:17:31+08:00">2026-10-12</time>
             </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2022-11-13 14:25:27" itemprop="dateModified" datetime="2022-11-13T14:25:27+08:00">2022-11-13</time>
+              </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p><strong>Part3主要是是生产上常用的常用的一些指令</strong></p>
+<p><strong>1.系统常用检查命令</strong></p>
+<p>磁盘 df -h<br>内存 free -m<br>负载 top</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">[root@redhat001 ~]$ free -m </span><br><span class="line">              total        used        free      shared  buff/cache   available</span><br><span class="line">Mem:           7823         222        6229         257        1371        7096</span><br><span class="line">Swap:             0           0           0</span><br></pre></td></tr></table></figure>
+
+<p>大数据 生产服务器 swap是设置0  10也可以</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">[root@redhat001 ~]$ df -h</span><br><span class="line">Filesystem      Size  Used Avail Use% Mounted on</span><br><span class="line">/dev/vda1        40G   16G   25G  39% /</span><br><span class="line"></span><br><span class="line">/dev/vdb1        2T   16G   25G  1% /data01</span><br><span class="line">/dev/vdb2        2T   16G   25G  1% /data02</span><br><span class="line">/dev/vdb3        2T   16G   25G  1% /data03</span><br><span class="line">/dev/vdb4        2T   16G   25G  1% /data04</span><br><span class="line"></span><br><span class="line">500G ssd</span><br><span class="line"></span><br><span class="line">不要</span><br><span class="line">devtmpfs        3.9G     0  3.9G   0% /dev</span><br><span class="line">tmpfs           3.9G   16K  3.9G   1% /dev/shm</span><br><span class="line">tmpfs           3.9G  258M  3.6G   7% /run</span><br><span class="line">tmpfs           3.9G     0  3.9G   0% /sys/fs/cgroup</span><br><span class="line">tmpfs           783M     0  783M   0% /run/user/1004</span><br><span class="line">[root@redhat001 ~]$ </span><br></pre></td></tr></table></figure>
+
+<p>系统负载<br>load average: 0.01, 0.03, 0.05<br>          1min   5min  15min</p>
+<p>经验值: 10  生产不用超过这个 ，否则认为服务器就是卡<br>a.是你的程序有问题 在大量跑计算<br>b.是不是被挖矿 yarn redis 最容易被hacker 攻击<br>c.硬件问题  内存条 硬盘   重启 </p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">top - 21:20:22 up 7 days, 58 min,  1 user,  load average: 0.01, 0.03, 0.05</span><br><span class="line">Tasks:  89 total,   1 running,  88 sleeping,   0 stopped,   0 zombie</span><br><span class="line">%Cpu(s):  0.2 us,  0.5 sy,  0.0 ni, 99.0 id,  0.0 wa,  0.0 hi,  0.0 si,  0.3 st</span><br><span class="line">KiB Mem :  8011076 total,  6377388 free,   229060 used,  1404628 buff/cache</span><br><span class="line">KiB Swap:        0 total,        0 free,        0 used.  7265724 avail Mem </span><br><span class="line"></span><br><span class="line">  PID USER      PR  NI    VIRT    RES    SHR S  %CPU %MEM     TIME+ COMMAND                                  </span><br><span class="line"> 2374 root      20   0  394348  31376   8608 S   0.3  0.4  41:44.99 jdog-kunlunmirr                          </span><br><span class="line">    1 root      20   0  125356   3796   2508 S   0.0  0.0   1:22.32 systemd                                  </span><br><span class="line">    2 root      20   0       0      0      0 S   0.0  0.0   0:00.00 kthreadd                                 </span><br><span class="line">    3 root      20   0       0      0      0 S   0.0  0.0   0:00.08 ksoftirqd/0                              </span><br><span class="line">    5 root       0 -20       0      0      0 S   0.0  0.0   0:00.00 kworker/0:0H                             </span><br><span class="line">    6 root      20   0       0      0      0 S   0.0  0.0   0:02.50 kworker/u4:0</span><br></pre></td></tr></table></figure>
+<p><strong>2.yum安装</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">yum search httpd</span><br><span class="line">yum install httpd</span><br></pre></td></tr></table></figure>
+<p>centos6:<br>service httpd status|start|stop  1个应用httpd<br>centos7:<br>service httpd status|start|stop  兼容<br>systemctl status|start|stop httpd app2 app3 app4  一次性操作多个应用</p>
+<p>搜索 卸载:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">[root@redhat001 ~]# rpm -qa|grep http</span><br><span class="line">httpd-2.4.6-90.el7.centos.x86_64</span><br><span class="line">httpd-tools-2.4.6-90.el7.centos.x86_64</span><br><span class="line">[root@redhat001 ~]# rpm -e 包名称 --nodeps</span><br><span class="line">[root@redhat001 ~]# yum remove httpd-2.4.6-90.el7.centos.x86_64</span><br></pre></td></tr></table></figure>
+
+<p><strong>3.进程 端口号</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">ps -ef | grep http</span><br><span class="line">kill -9 16629</span><br><span class="line">kill -9 16630 16631  16632  16633  16634</span><br></pre></td></tr></table></figure>
+
+<p>根据匹配字段 搜索所有符合的进程 全部杀死<br>但是: 生产慎用 除非你先ps查看 这个关键词搜索的进程 是不是都是你想要杀死的进程<br>保不齐有个其他服务的进程 会造成误杀 生产事故！！！</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">[root@redhat001 ~]# ps -ef|grep http</span><br><span class="line">root     18363     1  0 21:51 ?        00:00:00 /usr/sbin/httpd -DFOREGROUND</span><br><span class="line">apache   18364 18363  0 21:51 ?        00:00:00 /usr/sbin/httpd -DFOREGROUND</span><br><span class="line">apache   18365 18363  0 21:51 ?        00:00:00 /usr/sbin/httpd -DFOREGROUND</span><br><span class="line">apache   18366 18363  0 21:51 ?        00:00:00 /usr/sbin/httpd -DFOREGROUND</span><br><span class="line">apache   18367 18363  0 21:51 ?        00:00:00 /usr/sbin/httpd -DFOREGROUND</span><br><span class="line">apache   18368 18363  0 21:51 ?        00:00:00 /usr/sbin/httpd -DFOREGROUND</span><br><span class="line">root     18387 15881  0 21:51 pts/2    00:00:00 grep --color=auto http</span><br><span class="line">[root@redhat001 ~]# kill -9 $(pgrep -f httpd)</span><br><span class="line">[root@redhat001 ~]# </span><br><span class="line">[root@redhat001 ~]# </span><br><span class="line">[root@redhat001 ~]# ps -ef|grep http</span><br><span class="line">root     18444 15881  0 21:52 pts/2    00:00:00 grep --color=auto http</span><br><span class="line">[root@redhat001 ~]# </span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">[root@redhat001 ~]# ps -ef|grep http</span><br><span class="line">root     18670     1  0 21:53 ?        00:00:00 /usr/sbin/httpd -DFOREGROUND</span><br><span class="line">apache   18671 18670  0 21:53 ?        00:00:00 /usr/sbin/httpd -DFOREGROUND</span><br><span class="line">apache   18672 18670  0 21:53 ?        00:00:00 /usr/sbin/httpd -DFOREGROUND</span><br><span class="line">apache   18673 18670  0 21:53 ?        00:00:00 /usr/sbin/httpd -DFOREGROUND</span><br><span class="line">apache   18674 18670  0 21:53 ?        00:00:00 /usr/sbin/httpd -DFOREGROUND</span><br><span class="line">apache   18675 18670  0 21:53 ?        00:00:00 /usr/sbin/httpd -DFOREGROUND</span><br><span class="line">root     18696 15881  0 21:54 pts/2    00:00:00 grep --color=auto http</span><br></pre></td></tr></table></figure>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">[root@redhat001 ~]# yum install -y net-tools.x86_64</span><br><span class="line">[root@redhat001 ~]# netstat -nlp| grep 18670</span><br><span class="line">tcp6       0      0 :::80                   :::*                    LISTEN      18670/httpd         </span><br><span class="line">[root@redhat001 ~]# </span><br><span class="line">[root@redhat001 ~]# </span><br><span class="line">[root@redhat001 ~]# </span><br><span class="line">[root@redhat001 ~]# netstat -nlp| grep 18671</span><br><span class="line">[root@redhat001 ~]# netstat -nlp| grep 18672</span><br><span class="line">[root@redhat001 ~]# netstat -nlp| grep 18673</span><br><span class="line">[root@redhat001 ~]# </span><br></pre></td></tr></table></figure>
+
+<p>进程不一定都会起到端口号<br>但是  与其他服务通信 比如需要端口号！！！</p>
+<p>eg:去打开xxx服务器的应用yyy的网页？你会涉及到哪些Linux命令<br>ip<br>ps -ef|grep yyy –》pid<br>netstat -nlp|grep pid –》port</p>
+<p>浏览器: <a href="http://ip:port">http://ip:port</a></p>
+<p>细节:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">[root@redhat001 ~]# netstat -nlp| grep 18670</span><br><span class="line">tcp6       0      0 :::80                   :::*                    LISTEN      18670/httpd         </span><br><span class="line">tcp6       0      0 0.0.0.0:80                   :::*                    LISTEN      18670/httpd         </span><br><span class="line">tcp6       0      0 192.168.0.3:80                   :::*                    LISTEN      18670/httpd         </span><br><span class="line"></span><br><span class="line"></span><br><span class="line">tcp6       0      0 127.0.0.1:80                   :::*                    LISTEN      18670/httpd         </span><br><span class="line">tcp6       0      0 localhost:80                   :::*                    LISTEN      18670/httpd         </span><br><span class="line">危险: 该服务只能自己服务器的里面自己访问自己  </span><br></pre></td></tr></table></figure>
+
+<p>ping   ip<br>telnet ip port</p>
+<p>window cmd：<br>ping 114.67.101.143<br>telnet 114.67.101.143 80</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">Linux：</span><br><span class="line">[root@redhat001 ~]# telnet redhat001 80</span><br><span class="line">Trying 192.168.0.3...</span><br><span class="line">Connected to redhat001.</span><br><span class="line">Escape character is &#x27;^]&#x27;.</span><br><span class="line">^Z</span><br><span class="line">Connection closed by foreign host.</span><br><span class="line">[root@redhat001 ~]# </span><br><span class="line">[root@redhat001 ~]# </span><br><span class="line">[root@redhat001 ~]# </span><br><span class="line">[root@redhat001 ~]# </span><br><span class="line">[root@redhat001 ~]# telnet redhat001 809</span><br><span class="line">Trying 192.168.0.3...</span><br><span class="line">telnet: connect to address 192.168.0.3: Connection refused</span><br><span class="line">[root@redhat001 ~]# </span><br></pre></td></tr></table></figure>
+
+<p>有可能你的服务器 防火墙 开启，云主机 需要开启 安全组策略<br>直接找Linux运维 网络工程师 加防火墙(硬件)策略  </p>
+<p>总结:<br>Connection refused<br>1.ping   ip 因为服务器是ping功能禁止<br>2.telnet ip  port  ok</p>
+<p>配置企业级别yum源 取代互联网的repo文件的URL</p>
+<p>物理隔绝</p>
+<p><strong>4.下载</strong></p>
+<p>wget <a target="_blank" rel="noopener" href="https://repo1.maven.org/maven2/org/apache/spark/spark-core_2.12/2.4.5/spark-core_2.12-2.4.5.jar">https://repo1.maven.org/maven2/org/apache/spark/spark-core_2.12/2.4.5/spark-core_2.12-2.4.5.jar</a><br>curl <a target="_blank" rel="noopener" href="https://repo1.maven.org/maven2/org/apache/spark/spark-core_2.12/2.4.5/spark-core_2.12-2.4.5.jar">https://repo1.maven.org/maven2/org/apache/spark/spark-core_2.12/2.4.5/spark-core_2.12-2.4.5.jar</a> -O  spark-core_2.12-2.4.5.jar</p>
+<p><strong>5.压缩 解压</strong></p>
+<p>zip -r xxx.zip xxx/*<br>unzip xxx.zip</p>
+<p>tar -czvf xxxx.tar.gz  xxxx/*<br>tar -xzvf xxxx.tar.gz</p>
+<p>Examples:<br>  tar -cf archive.tar foo bar  # Create archive.tar from files foo and bar.<br>  tar -tvf archive.tar         # List all files in archive.tar verbosely.<br>  tar -xf archive.tar          # Extract all files from archive.tar.</p>
+<p><strong>6.命令找不到</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">[root@redhat001 ~]# </span><br><span class="line">[root@redhat001 ~]# </span><br><span class="line">[root@redhat001 ~]# ls</span><br><span class="line">dir1  dir1.tar.gz</span><br><span class="line">[root@redhat001 ~]# which ls</span><br><span class="line">alias ls=&#x27;ls --color=auto&#x27;</span><br><span class="line">        /usr/bin/ls</span><br><span class="line">[root@redhat001 ~]# which jjj</span><br><span class="line">/usr/bin/which: no jjj in (/home/dwz/app/python3/bin:/usr/java/jdk1.8.0_181/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin)</span><br><span class="line">[root@redhat001 ~]# </span><br></pre></td></tr></table></figure>
+<p>想要命令快速找到  which xxx 来验证，其实就是提前将命令的目录配置在环境变量$PATH<br>echo $PATH 来查看是否将命令的目录配置上！</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">[root@redhat001 ~]# echo $PATH</span><br><span class="line">/home/dwz/app/python3/bin:/usr/java/jdk1.8.0_181/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin</span><br><span class="line">[root@redhat001 ~]# jjj</span><br><span class="line">-bash: jjj: command not found</span><br><span class="line">[root@redhat001 ~]# </span><br></pre></td></tr></table></figure>
+<p> command not found<br> a.没安装上<br> b.路径没配置</p>
+<p> <strong>7.定时</strong> </p>
+<p> 脚本:<br> <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[root@redhat001 ~]# </span><br><span class="line">[root@redhat001 ~]# vi ruoze.sh</span><br></pre></td></tr></table></figure></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line">#!/bin/bash</span><br><span class="line">date</span><br><span class="line">[root@redhat001 ~]# </span><br><span class="line">[root@redhat001 ~]# </span><br><span class="line">[root@redhat001 ~]# ll</span><br><span class="line">total 8</span><br><span class="line">drwxr-xr-x 2 root root  30 Apr 22 22:50 dir1</span><br><span class="line">-rw-r--r-- 1 root root 128 Apr 22 22:49 dir1.tar.gz</span><br><span class="line">-rw-r--r-- 1 root root  19 Apr 22 23:02 ruoze.sh</span><br><span class="line">[root@redhat001 ~]# ./ruoze.sh</span><br><span class="line">-bash: ./ruoze.sh: Permission denied</span><br><span class="line">[root@redhat001 ~]# sh ./ruoze.sh</span><br><span class="line">Wed Apr 22 23:02:36 CST 2020</span><br><span class="line">[root@redhat001 ~]# chmod 744 ruoze.sh</span><br><span class="line">[root@redhat001 ~]# ll</span><br><span class="line">total 8</span><br><span class="line">drwxr-xr-x 2 root root  30 Apr 22 22:50 dir1</span><br><span class="line">-rw-r--r-- 1 root root 128 Apr 22 22:49 dir1.tar.gz</span><br><span class="line">-rwxr--r-- 1 root root  19 Apr 22 23:02 ruoze.sh</span><br><span class="line">[root@redhat001 ~]# ./ruoze.sh </span><br><span class="line">Wed Apr 22 23:03:17 CST 2020</span><br><span class="line">[root@redhat001 ~]# </span><br><span class="line">[root@redhat001 ~]# </span><br><span class="line">[root@redhat001 ~]# date</span><br><span class="line">Wed Apr 22 23:03:21 CST 2020</span><br><span class="line"></span><br><span class="line">[root@redhat001 ~]# crontab -e</span><br><span class="line">* * * * * /root/ruoze.sh &gt;&gt; /root/ruoze.log</span><br></pre></td></tr></table></figure>
+<p>分<br>小时<br>日<br>月<br>周</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">* 表示 每**</span><br><span class="line">*/6 * * * * 每6分钟</span><br></pre></td></tr></table></figure>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">[root@redhat001 ~]# vi ruoze2.sh</span><br><span class="line">#!/bin/bash</span><br><span class="line">for((i=1;i&lt;=6;i++));</span><br><span class="line">do</span><br><span class="line">	date</span><br><span class="line">	sleep 10s</span><br><span class="line">done</span><br><span class="line">[root@redhat001 ~]# chmod +x ruoze2.sh</span><br></pre></td></tr></table></figure>
+<p><strong>7.后台执行脚本</strong></p>
+<p>nohup  /root/ruoze.sh &gt;&gt; /root/ruoze.log 2&gt;&amp;1 &amp;  生产标准写法</p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2026/10/12/Linux%E6%93%8D%E4%BD%9C%E6%8C%87%E4%BB%A4%E4%B8%80/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="zhawp">
+      <meta itemprop="description" content="SHARINGBLOG">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="holosxy.github.io">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2026/10/12/Linux%E6%93%8D%E4%BD%9C%E6%8C%87%E4%BB%A4%E4%B8%80/" class="post-title-link" itemprop="url">Linux操作指令一</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2026-10-12 23:17:31" itemprop="dateCreated datePublished" datetime="2026-10-12T23:17:31+08:00">2026-10-12</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2022-11-13 14:09:01" itemprop="dateModified" datetime="2022-11-13T14:09:01+08:00">2022-11-13</time>
+              </span>
 
           
 
@@ -638,7 +632,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2022/11/10/Hadoop%E5%A6%82%E4%BD%95%E4%BD%BF%E7%94%A8lzo%E5%8E%8B%E7%BC%A9%E5%AE%8C%E6%95%B4%E7%AF%87/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2026/10/12/HDFS%E6%9E%B6%E6%9E%84%E5%8E%9F%E7%90%86/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -652,7 +646,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/2022/11/10/Hadoop%E5%A6%82%E4%BD%95%E4%BD%BF%E7%94%A8lzo%E5%8E%8B%E7%BC%A9%E5%AE%8C%E6%95%B4%E7%AF%87/" class="post-title-link" itemprop="url">Hadoop如何使用lzo压缩完整篇</a>
+            <a href="/2026/10/12/HDFS%E6%9E%B6%E6%9E%84%E5%8E%9F%E7%90%86/" class="post-title-link" itemprop="url">HDFS架构原理</a>
         </h2>
 
         <div class="post-meta">
@@ -661,10 +655,126 @@
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">发表于</span>
-              
 
-              <time title="创建时间：2022-11-10 15:25:31 / 修改时间：15:32:25" itemprop="dateCreated datePublished" datetime="2022-11-10T15:25:31+08:00">2022-11-10</time>
+              <time title="创建时间：2026-10-12 23:17:31" itemprop="dateCreated datePublished" datetime="2026-10-12T23:17:31+08:00">2026-10-12</time>
             </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2022-11-13 16:15:38" itemprop="dateModified" datetime="2022-11-13T16:15:38+08:00">2022-11-13</time>
+              </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p><strong>1.HDFS主从架构</strong></p>
+<p>角色:<br>namenode  名称节点 nn<br>a.文件名称<br>b.文件的目录结构<br>c.文件的属性 权限 创建时间 副本数<br>d.一个文件被对应切割哪些数据块 副本数的块  9块</p>
+<p>===》数据块对应分布在哪些节点上</p>
+<p><strong>blockmap 块映射  当然nn节点是不会持久化存储这种映射关系<br>是通过集群的启动和运行时，dn定期发送blockreport给nn，然后<br>nn就在内存中动态维护这种映射关系</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@data001 ~]$ hdfs dfs -ls  /wordcount2/input/</span><br><span class="line">20/05/10 20:12:38 WARN util.NativeCodeLoader: Unable to load native-hadoop </span><br><span class="line">library for your platform... using builtin-java classes where applicable</span><br><span class="line">Found 2 items</span><br><span class="line">-rw-r--r--   1 hadoop supergroup     35     2020-05-09 21:34 /wordcount2/input/1.log</span><br><span class="line">-rw-r--r--   1 hadoop supergroup     29     2020-05-09 21:34 /wordcount2/input/2.log</span><br><span class="line">[hadoop@data001 ~]$ </span><br></pre></td></tr></table></figure>
+
+
+<p>作用:</p>
+<h5 id="文件系统的命名空间-其实就是维护文件系统树的文件和文件夹"><a href="#文件系统的命名空间-其实就是维护文件系统树的文件和文件夹" class="headerlink" title="文件系统的命名空间  其实就是维护文件系统树的文件和文件夹"></a>文件系统的命名空间  其实就是维护文件系统树的文件和文件夹</h5><h5 id="这些形式是以两种文件来永久的保存在本地磁盘的"><a href="#这些形式是以两种文件来永久的保存在本地磁盘的" class="headerlink" title="这些形式是以两种文件来永久的保存在本地磁盘的"></a>这些形式是以两种文件来永久的保存在本地磁盘的</h5><h5 id="镜像文件-fsimage"><a href="#镜像文件-fsimage" class="headerlink" title="镜像文件 fsimage"></a>镜像文件 fsimage</h5><h5 id="编辑日志文件-editlogs"><a href="#编辑日志文件-editlogs" class="headerlink" title="编辑日志文件 editlogs"></a>编辑日志文件 editlogs</h5><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@data001 current]$ pwd</span><br><span class="line">/home/hadoop/tmp/dfs/name/current</span><br><span class="line">[hadoop@data001 current]$ ll</span><br><span class="line">edits_0000000000000000375-0000000000000000376</span><br><span class="line">edits_0000000000000000377-0000000000000000378</span><br><span class="line">edits_0000000000000000379-0000000000000000380</span><br><span class="line">edits_0000000000000000381-0000000000000000382</span><br><span class="line">edits_0000000000000000383-0000000000000000384</span><br><span class="line">edits_0000000000000000385-0000000000000000386</span><br><span class="line">edits_inprogress_0000000000000000387</span><br><span class="line">fsimage_0000000000000000384</span><br><span class="line">fsimage_0000000000000000384.md5</span><br><span class="line">fsimage_0000000000000000386</span><br><span class="line">fsimage_0000000000000000386.md5</span><br></pre></td></tr></table></figure>
+
+<p>secondary namenode  第二名称节点  snn</p>
+<p>a.fsimage editlog定期拿过来合并 备份 推送</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@data001 current]$ pwd</span><br><span class="line">/home/hadoop/tmp/dfs/namesecondary/current</span><br><span class="line">[hadoop@data001 current]$ </span><br><span class="line">edits_0000000000000000377-0000000000000000378</span><br><span class="line">edits_0000000000000000379-0000000000000000380</span><br><span class="line">edits_0000000000000000381-0000000000000000382</span><br><span class="line">edits_0000000000000000383-0000000000000000384</span><br><span class="line">edits_0000000000000000385-0000000000000000386</span><br><span class="line">fsimage_0000000000000000384</span><br><span class="line">fsimage_0000000000000000384.md5</span><br><span class="line">fsimage_0000000000000000386</span><br><span class="line">fsimage_0000000000000000386.md5</span><br></pre></td></tr></table></figure>
+
+<p>fsimage_0000000000000000384<br>snn将老大的edits_0000000000000000385-0000000000000000386<br>检查点动作checkpoint合并为fsimage_0000000000000000386将这个<br>386文件推送给老大，那么新的数据写读的记录就存放在<br>edits_inprogress_0000000000000000387 日志文件是变化的追加</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">dfs.namenode.checkpoint.period  3600s </span><br><span class="line">dfs.namenode.checkpoint.txns    1000000 </span><br></pre></td></tr></table></figure>
+<p>为了解决单点故障，nn只有一个对外的，后来新增一个snn，1小时的备份<br>虽然能够减轻单点故障带来的丢失风险，但是在生产上还是不允许使用snn<br>11:00  snn 备份<br>11:30  数据一直写到这  突然nn节点 磁盘故障 无法恢复<br>拿snn的最新的一个fsimage文件恢复，那么只能恢复 11点的数据<br>在生产上是 不用snn，是启动另外一个NN进程(实时备份，实时准备替换nn，<br>变为活动的nn)叫做HDFS HA</p>
+<p><strong>datanode  数据节点  dn</strong></p>
+<p>a.存储数据块和数据块的校验和</p>
+<p>作用:<br>a.每隔3s发送心跳给nn,告诉 我还活着</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">dfs.heartbeat.interval  3s</span><br></pre></td></tr></table></figure>
+<p>b.每隔一定的时间发生一次blockreport</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">dfs.blockreport.intervalMsec   21600000ms=6小时</span><br><span class="line">dfs.datanode.directoryscan.interval  21600s=6小时</span><br></pre></td></tr></table></figure>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@data001 subdir0]$ pwd</span><br><span class="line">/home/hadoop/tmp/dfs/data/current/BP-672629417-192.168.0.3-1588775739687/currentdir0]$ </span><br></pre></td></tr></table></figure>
+
+
+<p><strong>2.HDFS写流程</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@data001 ~]$ echo &#x27;data&#x27; &gt;1.log</span><br><span class="line">[hadoop@data001 ~]$ </span><br><span class="line">[hadoop@data001 ~]$ hdfs dfs -put 1.log  /</span><br><span class="line">20/05/10 21:19:54 WARN util.NativeCodeLoader: Unable to load native-hadoop </span><br><span class="line">library for your platform... using builtin-java classes where applicable</span><br><span class="line">[hadoop@data001 ~]$ </span><br></pre></td></tr></table></figure>
+
+<p><img src="/images/hdfsarchitecture.jpg" alt="HDFS"></p>
+<h3 id="对用户操作是无感知的"><a href="#对用户操作是无感知的" class="headerlink" title="对用户操作是无感知的"></a>对用户操作是无感知的</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">1.HDFS Client调用FileSystem.create(filePath)方法，去和NN进行【RPC】通信！</span><br><span class="line">NN 会去check这个路径的文件是否已经存在，是否有权限能够创建这个文件！</span><br><span class="line">假如都ok，就去创建一个新的文件，但是这时还没写数据，是不关联任何的block。</span><br><span class="line">nn根据上传的文件大小，根据块大小+副本数参数，</span><br><span class="line">计算要上传多少块和块存储在DN的位置。最终将这些信息返回给客户端，</span><br><span class="line">为【FSDataOutputStream】对象</span><br><span class="line"></span><br><span class="line">2.Client调用【FSDataOutputStream】对象的write方法，</span><br><span class="line">将第一个块的第一个副本数写第一个DN节点，</span><br><span class="line">写完去第二个副本写DN2；写完去第三个副本写DN3。当第三个副本写完，</span><br><span class="line">就返回一个ack packet确定包给DN2节点，</span><br><span class="line">当DN2节点收到这个ack packet确定包加上自己也是写完了，就返回一个</span><br><span class="line">ack packet确定包给第一个DN1节点，当DN1节点收到这个ack packet确定包</span><br><span class="line">加上自己也是写完了，将ack packet确定包返回给【FSDataOutputStream】</span><br><span class="line">对象，就标识第一个块的三个副本写完。其他块以此类推！</span><br><span class="line"></span><br><span class="line">3.当所有的块全部写完， client调用 【FSDataOutputStream】对象的close方法，</span><br><span class="line">关闭输出流。再次调用FileSystem.complete方法，告诉nn文件写成功!</span><br><span class="line">伪分布式 1台dn  副本数参数必然是设置1</span><br><span class="line">dn挂了，肯定不能写入</span><br></pre></td></tr></table></figure>
+
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">生产分布式 3台dn  副本数参数必然是设置3</span><br><span class="line">dn挂了，肯定不能写入</span><br><span class="line"></span><br><span class="line">生产分布式 &gt;3台dn  副本数参数必然是设置3</span><br><span class="line">dn挂了，能写入</span><br><span class="line"></span><br><span class="line">存活的alive dn节点数&gt;=副本数 就能写成功</span><br></pre></td></tr></table></figure>
+
+<p><strong>3.HDFS读流程</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@data001 ~]$ hdfs dfs -cat  /1.log</span><br><span class="line">20/05/10 21:53:19 WARN util.NativeCodeLoader: Unable to load </span><br><span class="line">native-hadoop library for your platform... using builtin-java </span><br><span class="line">classes where applicable data</span><br><span class="line">[hadoop@data001 ~]$ </span><br></pre></td></tr></table></figure>
+
+<p>对用户操作是无感知的 </p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">1.Client调用FileSystem的open(filePath),</span><br><span class="line">与NN进行RPC通信，返回该文件的部分或者全部的block列表</span><br><span class="line">也就是返回【FSDataInputStream】对象</span><br><span class="line"></span><br><span class="line">2.Client调用【FSDataInputStream】对象的read方法</span><br><span class="line">去与第一个块的最近的DN进行读取，读取完成后，会check，假如ok，就关闭与DN通信。</span><br><span class="line">假如读取失败，会记录DN+block信息，下次就不会从这个节点读取。那么就从第二个节点读取。</span><br><span class="line"></span><br><span class="line">然后去与第二个块的最近的DN进行读取，以此类推。</span><br><span class="line"></span><br><span class="line">假如当block列表全部读取完成，文件还没读取结束，就调用FileSystem从nn获取下一批次</span><br><span class="line">的block列表。</span><br><span class="line"></span><br><span class="line">3.Client调用【FSDataInputStream】对象close方法，关闭输入流。</span><br></pre></td></tr></table></figure>
+
+<p><strong>4.HDFS副本放置策略</strong></p>
+<p><img src="/images/HDFS%E5%89%AF%E6%9C%AC%E6%94%BE%E7%BD%AE%E7%AD%96%E7%95%A5.jpg" alt="HDFS"></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">机架 rack1 5   rack2 5</span><br><span class="line">生产上读写操作 尽量选择 某个DN节点</span><br><span class="line">第一个副本：</span><br><span class="line">放置在上传的DN节点；</span><br><span class="line">假如是非DN节点，就随机挑选一个磁盘不太慢，cpu不太忙的节点；</span><br><span class="line">第二个副本：</span><br><span class="line">放置在第一个副本不同的机架上的某个DN节点。</span><br><span class="line">第三个副本:</span><br><span class="line">与第二个副本相同机架的不同节点上。</span><br><span class="line">如果副本数设置更多，就随机放。</span><br></pre></td></tr></table></figure>
+
+
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2026/10/12/Hadoop%E5%A6%82%E4%BD%95%E4%BD%BF%E7%94%A8lzo%E5%8E%8B%E7%BC%A9%E5%AE%8C%E6%95%B4%E7%AF%87/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="zhawp">
+      <meta itemprop="description" content="SHARINGBLOG">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="holosxy.github.io">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2026/10/12/Hadoop%E5%A6%82%E4%BD%95%E4%BD%BF%E7%94%A8lzo%E5%8E%8B%E7%BC%A9%E5%AE%8C%E6%95%B4%E7%AF%87/" class="post-title-link" itemprop="url">Hadoop如何使用lzo压缩完整篇</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2026-10-12 23:17:31" itemprop="dateCreated datePublished" datetime="2026-10-12T23:17:31+08:00">2026-10-12</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2022-11-10 15:32:25" itemprop="dateModified" datetime="2022-11-10T15:32:25+08:00">2022-11-10</time>
+              </span>
 
           
 
@@ -695,80 +805,6 @@
 
 <h1 id="使用本地程序创建索引"><a href="#使用本地程序创建索引" class="headerlink" title="使用本地程序创建索引"></a>使用本地程序创建索引</h1><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">hadoop jar /home/hadoop/hadoop-lzo-0.4.21-SNAPSHOT.jar com.hadoop.compression.lzo.LzoIndexer /input/data.lzo</span><br></pre></td></tr></table></figure>
 <p>8.执行自己的mapreduce程序的时候，输入路径为/input而非/input/data.lzo，这样就能实现lzo的分片操作了。</p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2022/11/10/%E7%94%9F%E4%BA%A7HDFS%20Block%E6%8D%9F%E5%9D%8F%E6%81%A2%E5%A4%8D%E6%9C%80%E4%BD%B3%E5%AE%9E%E8%B7%B5/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="zhawp">
-      <meta itemprop="description" content="SHARINGBLOG">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="holosxy.github.io">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2022/11/10/%E7%94%9F%E4%BA%A7HDFS%20Block%E6%8D%9F%E5%9D%8F%E6%81%A2%E5%A4%8D%E6%9C%80%E4%BD%B3%E5%AE%9E%E8%B7%B5/" class="post-title-link" itemprop="url">生产HDFS Block损坏恢复最佳实践</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-              
-
-              <time title="创建时间：2022-11-10 15:25:30 / 修改时间：15:32:51" itemprop="dateCreated datePublished" datetime="2022-11-10T15:25:30+08:00">2022-11-10</time>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p>文件处理.md</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line">上传:</span><br><span class="line">-bash-4.2$ hdfs dfs -<span class="built_in">mkdir</span> /blockrecover</span><br><span class="line">-bash-4.2$ <span class="built_in">echo</span> <span class="string">&quot;www.data.com&quot;</span> &gt; ruozedata.md</span><br><span class="line"></span><br><span class="line">-bash-4.2$ hdfs dfs -put data.md /blockrecover</span><br><span class="line">-bash-4.2$ hdfs dfs -<span class="built_in">ls</span> /blockrecover</span><br><span class="line"></span><br><span class="line">Found 1 items</span><br><span class="line"></span><br><span class="line">-rw-r--r--   3 hdfs supergroup         18 2019-03-03 14:42 /blockrecover/ruozedata.md</span><br><span class="line">-bash-4.2$ </span><br><span class="line"></span><br><span class="line">校验: 健康状态</span><br><span class="line">-bash-4.2$ hdfs fsck /</span><br><span class="line">Connecting to namenode via http://yws76:50070/fsck?ugi=hdfs&amp;path=%2F</span><br><span class="line">FSCK started by hdfs (auth:SIMPLE) from /192.168.0.76 <span class="keyword">for</span> path / at Sun Mar 03 14:44:44 CST 2019</span><br><span class="line">...............................................................................Status: HEALTHY</span><br><span class="line"> Total size:    50194618424 B</span><br><span class="line"> Total <span class="built_in">dirs</span>:    354</span><br><span class="line"> Total files:   1079</span><br><span class="line"> Total symlinks:                0</span><br><span class="line"> Total blocks (validated):      992 (avg. block size 50599413 B)</span><br><span class="line"> Minimally replicated blocks:   992 (100.0 %)</span><br><span class="line"> Over-replicated blocks:        0 (0.0 %)</span><br><span class="line"> Under-replicated blocks:       0 (0.0 %)</span><br><span class="line"> Mis-replicated blocks:         0 (0.0 %)</span><br><span class="line"> Default replication <span class="built_in">factor</span>:    3</span><br><span class="line"> Average block replication:     3.0</span><br><span class="line"> Corrupt blocks:                0</span><br><span class="line"> Missing replicas:              0 (0.0 %)</span><br><span class="line"> Number of data-nodes:          3</span><br><span class="line"> Number of racks:               1</span><br><span class="line"> FSCK ended at Sun Mar 03 14:44:45 CST 2019 <span class="keyword">in</span> 76 milliseconds</span><br><span class="line"></span><br><span class="line"> The filesystem under path <span class="string">&#x27;/&#x27;</span> is HEALTHY</span><br><span class="line"> -bash-4.2$</span><br></pre></td></tr></table></figure>
-
-<p>直接DN节点上删除文件一个block的一个副本(3副本) 删除块和meta文件:<br>[root@yws87 subdir135]# rm -rf blk_1075808214 blk_1075808214_2068515.meta<br>直接重启HDFS，直接模拟损坏效果，然后fsck检查:</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">-bash-4.2$ hdfs fsck /</span><br><span class="line">Connecting to namenode via http://yws77:50070/fsck?ugi=hdfs&amp;path=%2F</span><br><span class="line">FSCK started by hdfs (auth:SIMPLE) from /192.168.0.76 <span class="keyword">for</span> path / at Sun Mar 03 16:02:04 CST 2019</span><br><span class="line">.</span><br><span class="line">/blockrecover/ruozedata.md:  Under replicated BP-1513979236-192.168.0.76-1514982530341:blk_1075808214_2068515. Target Replicas is 3 but found 2 live replica(s), 0 decommissioned replica(s), 0 decommissioning replica(s).</span><br><span class="line">...............................................................................Status: HEALTHY</span><br><span class="line"> Total size:    50194618424 B</span><br><span class="line"> Total <span class="built_in">dirs</span>:    354</span><br><span class="line"> Total files:   1079</span><br><span class="line"> Total symlinks:                0</span><br><span class="line"> Total blocks (validated):      992 (avg. block size 50599413 B)</span><br><span class="line"> Minimally replicated blocks:   992 (100.0 %)</span><br><span class="line"> Over-replicated blocks:        0 (0.0 %)</span><br><span class="line"> Under-replicated blocks:       1 (0.10080645 %)</span><br><span class="line"> Mis-replicated blocks:         0 (0.0 %)</span><br><span class="line"> Default replication <span class="built_in">factor</span>:    3</span><br><span class="line"> Average block replication:     2.998992</span><br><span class="line"> Corrupt blocks:                0</span><br><span class="line"> Missing replicas:              1 (0.033602152 %)</span><br><span class="line"> Number of data-nodes:          3</span><br><span class="line"> Number of racks:               1</span><br><span class="line"> </span><br><span class="line"> FSCK ended at Sun Mar 03 16:02:04 CST 2019 <span class="keyword">in</span> 148 milliseconds</span><br><span class="line"> The filesystem under path <span class="string">&#x27;/&#x27;</span> is HEALTHY</span><br><span class="line"> -bash-4.2$</span><br></pre></td></tr></table></figure>
-<h4 id="手动修复hdfs-debug"><a href="#手动修复hdfs-debug" class="headerlink" title="手动修复hdfs debug"></a>手动修复hdfs debug</h4><p>-bash-4.2$ hdfs |grep debug<br>没有输出debug参数的任何信息结果！<br>故hdfs命令帮助是没有debug的，但是确实有hdfs debug这个组合命令，切记。</p>
-<p>修复命令:</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">-bash-4.2$ hdfs debug  recoverLease  -path /blockrecover/ruozedata.md -retries 10</span><br><span class="line">recoverLease SUCCEEDED on /blockrecover/ruozedata.md</span><br><span class="line">-bash-4.2$ </span><br><span class="line"></span><br><span class="line">直接DN节点查看，block文件和meta文件恢复:</span><br><span class="line">[root@yws87 subdir135]<span class="comment"># ll</span></span><br><span class="line">total 8</span><br><span class="line">-rw-r--r-- 1 hdfs hdfs 56 Mar  3 14:28 blk_1075808202</span><br><span class="line">-rw-r--r-- 1 hdfs hdfs 11 Mar  3 14:28 blk_1075808202_2068503.meta</span><br><span class="line">[root@yws87 subdir135]<span class="comment"># ll</span></span><br><span class="line">total 24</span><br><span class="line">-rw-r--r-- 1 hdfs hdfs 56 Mar  3 14:28 blk_1075808202</span><br><span class="line">-rw-r--r-- 1 hdfs hdfs 11 Mar  3 14:28 blk_1075808202_2068503.meta</span><br><span class="line">-rw-r--r-- 1 hdfs hdfs 18 Mar  3 15:23 blk_1075808214</span><br><span class="line">-rw-r--r-- 1 hdfs hdfs 11 Mar  3 15:23 blk_1075808214_2068515.meta</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<h4 id="自动修复"><a href="#自动修复" class="headerlink" title="自动修复"></a>自动修复</h4><p>当数据块损坏后，DN节点执行directoryscan操作之前，都不会发现损坏；<br>也就是directoryscan操作是间隔6h<br>dfs.datanode.directoryscan.interval : 21600</p>
-<p>在DN向NN进行blockreport前，都不会恢复数据块;<br>也就是blockreport操作是间隔6h<br>dfs.blockreport.intervalMsec : 21600000</p>
-<p>当NN收到blockreport才会进行恢复操作。<br>具体参考生产上HDFS（CDH5.12.0）对应的版本的文档参数:</p>
-<p><a target="_blank" rel="noopener" href="http://archive.cloudera.com/cdh5/cdh/5/hadoop-2.6.0-cdh5.12.0/hadoop-project-dist/hadoop-hdfs/hdfs-default.xml">http://archive.cloudera.com/cdh5/cdh/5/hadoop-2.6.0-cdh5.12.0/hadoop-project-dist/hadoop-hdfs/hdfs-default.xml</a></p>
-<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><p>生产上本人一般倾向于使用 手动修复方式，但是前提要手动删除损坏的block块。</p>
-<p>切记，是删除损坏block文件和meta文件，而不是删除hdfs文件。</p>
-<p>当然还可以先把文件get下载，然后hdfs删除，再对应上传。</p>
-<p>切记删除不要执行: hdfs fsck / -delete 这是删除损坏的文件， 那么数据不就丢了嘛；除非无所谓丢数据，或者有信心从其他地方可以补数据到hdfs！</p>
 
       
     </div>
@@ -882,7 +918,7 @@
 <div class="copyright">
   
   &copy; 
-  <span itemprop="copyrightYear">2022</span>
+  <span itemprop="copyrightYear">2026</span>
   <span class="with-love">
     <i class="fa fa-heart"></i>
   </span>
